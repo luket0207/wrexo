@@ -6,8 +6,8 @@ const Home = () => {
     <div className="home">
       <div className="home_content">
         <h1>Mini React Game Engine</h1>
-        <Button variant={BUTTON_VARIANT.PRIMARY} to="/info">
-          Go to Info
+        <Button variant={BUTTON_VARIANT.PRIMARY} to="/debug">
+          Go to Debug Page
         </Button>
       </div>
     </div>

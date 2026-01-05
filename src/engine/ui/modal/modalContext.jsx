@@ -17,6 +17,7 @@ export const ModalProvider = ({ children }) => {
     content: null,
     buttons: MODAL_BUTTONS.OK,
     customButtonText: "Submit",
+    autoClose: null,
     onClick: null,
     onYes: null,
     onNo: null,
@@ -30,6 +31,7 @@ export const ModalProvider = ({ children }) => {
       content: null,
       buttons: MODAL_BUTTONS.OK,
       customButtonText: "Submit",
+      autoClose: null,
       onClick: null,
       onYes: null,
       onNo: null,
@@ -42,6 +44,7 @@ export const ModalProvider = ({ children }) => {
       modalContent = null,
       buttons = MODAL_BUTTONS.OK,
       customButtonText = "Submit",
+      autoClose = null,
       onClick = null,
       onYes = null,
       onNo = null,
@@ -52,6 +55,7 @@ export const ModalProvider = ({ children }) => {
         content: modalContent,
         buttons,
         customButtonText,
+        autoClose,
         onClick,
         onYes,
         onNo,
@@ -79,6 +83,7 @@ export const ModalProvider = ({ children }) => {
         content={modalState.content}
         buttons={modalState.buttons}
         customButtonText={modalState.customButtonText}
+        autoClose={modalState.autoClose}
         onClick={modalState.onClick}
         onYes={modalState.onYes}
         onNo={modalState.onNo}

@@ -1,0 +1,161 @@
+/* battle.scss */
+/* Shared styling for Player/Opponent panels */
+
+.battle-sideCard {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  display: flex;
+}
+
+.battle-sideCard__title {
+  margin: 0 0 8px 0;
+}
+
+.battle-sideCard__activeLine {
+  margin-top: 8px;
+}
+
+.battle-sideCard__activeMeta {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+.battle-sideCard__bench {
+  margin-top: 14px;
+}
+
+.battle-sideCard__benchInner {
+  margin-top: 8px;
+}
+
+/* HP */
+
+.battle-hp {
+  margin-top: 6px;
+}
+
+.battle-hp__label {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+/* Moves */
+
+.battle-moves {
+  margin-top: 10px;
+}
+
+.battle-moves__title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.battle-moves__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.battle-moves__slot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.battle-moves__slot.is-locked {
+  opacity: 0.35;
+}
+
+.battle-moves__slotIndex {
+  width: 22px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 2px 0;
+}
+
+.battle-benchList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.battle-benchCard {
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.battle-benchCard.is-fainted {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.battle-benchCard__meta {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Battle screen layout (migrated from Battle.jsx inline styles) */
+
+.battle__banner {
+  margin-top: 12px;
+}
+
+.battle__turn {
+  margin-top: 12px;
+}
+
+.battle__controls {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.battle__opponentStatus {
+  opacity: 0.8;
+}
+
+.battle__selection {
+  margin-top: 12px;
+}
+
+.battle__action {
+  margin-top: 12px;
+}
+
+.battle__muted {
+  opacity: 0.8;
+}
+
+.battle__log {
+  margin-top: 12px;
+}
+
+.battle__logTitle {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.battle__logList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0.9;
+}
+
+.battle__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.battle-moves__slot.is-confused {
+  border-left: 4px solid #b300ff;
+  padding-left: 6px;
+}

@@ -1,30 +1,3 @@
-/**
- * Usage
- *
- * import { useModal } from "../../engine/ui/modal/modalContext";
- * import { MODAL_BUTTONS } from "../../engine/ui/modal/modalContext";
- *
- * const Example = () => {
- *   const { openModal } = useModal();
- *
- *   return (
- *     <button
- *       onClick={() =>
- *         openModal({
- *           modalTitle: "Confirm",
- *           modalContent: <div>Are you sure?</div>,
- *           buttons: MODAL_BUTTONS.YES_NO,
- *           onYes: () => console.log("yes"),
- *           onNo: () => console.log("no"),
- *         })
- *       }
- *     >
- *       Open Modal
- *     </button>
- *   );
- * };
- */
-
 import React, { useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import Button, { BUTTON_VARIANT } from "../button/button";
@@ -33,13 +6,13 @@ import "./modal.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
-
 const Modal = ({
   isOpen,
   title,
   content,
   buttons = MODAL_BUTTONS.OK,
   customButtonText = "Submit",
+  autoClose = null,
   onClick,
   onYes,
   onNo,
@@ -54,6 +27,14 @@ const Modal = ({
 
     return { okHandler, yesHandler, noHandler, safeClose };
   }, [onClick, onYes, onNo, onClose]);
+
+  const isAutoCloseEnabled = useMemo(() => {
+    if (autoClose == null) return false;
+    const seconds = Number(autoClose);
+    return Number.isFinite(seconds) && seconds > 0;
+  }, [autoClose]);
+
+  const hasTitle = typeof title === "string" ? title.trim().length > 0 : Boolean(title);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -74,6 +55,21 @@ const Modal = ({
     };
   }, [isOpen, footerConfig]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!isAutoCloseEnabled) return;
+
+    const seconds = Number(autoClose);
+
+    const timeoutId = window.setTimeout(() => {
+      footerConfig.safeClose();
+    }, seconds * 1000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isOpen, isAutoCloseEnabled, autoClose, footerConfig]);
+
   if (!isOpen) return null;
 
   const modalNode = (
@@ -85,14 +81,18 @@ const Modal = ({
         if (e.target === e.currentTarget) footerConfig.safeClose();
       }}
     >
-      <div className="modal" role="dialog" aria-modal="true" aria-label={title || "Modal"}>
-        <div className="modal__header">
-          <div className="modal__title">{title || "Modal"}</div>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={hasTitle ? title : "Modal"}>
+        {hasTitle && (
+          <div className="modal__header">
+            <div className="modal__title">{title}</div>
 
-          <button type="button" className="modal__close" onClick={footerConfig.safeClose} aria-label="Close modal">
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
-        </div>
+            {!isAutoCloseEnabled && (
+              <button type="button" className="modal__close" onClick={footerConfig.safeClose} aria-label="Close modal">
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="modal__body">{content || <h2>Modal</h2>}</div>
 

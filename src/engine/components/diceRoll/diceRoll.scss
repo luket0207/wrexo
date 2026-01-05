@@ -1,0 +1,167 @@
+.diceRoll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 0;
+}
+
+.diceRoll__caption {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.diceRoll__scene {
+  width: 120px;
+  height: 120px;
+  perspective: 900px;
+  --final-rx: -90deg;
+  --final-ry: 0deg;
+  --roll-ms: 3500ms;
+}
+
+.diceRoll__cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--final-rx)) rotateY(var(--final-ry));
+  will-change: transform;
+}
+
+.diceRoll__scene.is-rolling .diceRoll__cube {
+  animation: diceRollSpin var(--roll-ms) cubic-bezier(0.15, 0.8, 0.2, 1) forwards;
+}
+
+.diceRoll__scene.is-landed .diceRoll__cube {
+  transform: rotateX(var(--final-rx)) rotateY(var(--final-ry));
+}
+
+@keyframes diceRollSpin {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  15% {
+    transform: rotateX(420deg) rotateY(240deg);
+  }
+  35% {
+    transform: rotateX(900deg) rotateY(540deg);
+  }
+  60% {
+    transform: rotateX(1260deg) rotateY(900deg);
+  }
+  80% {
+    transform: rotateX(1440deg) rotateY(1260deg);
+  }
+  100% {
+    transform: rotateX(var(--final-rx)) rotateY(var(--final-ry));
+  }
+}
+
+.diceRoll__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+
+  font-size: 34px;
+  font-weight: 800;
+  color: rgba(0, 0, 0, 0.85);
+  user-select: none;
+}
+
+.diceRoll__face--front {
+  transform: rotateY(0deg) translateZ(60px);
+}
+
+.diceRoll__face--back {
+  transform: rotateY(180deg) translateZ(60px);
+}
+
+.diceRoll__face--right {
+  transform: rotateY(90deg) translateZ(60px);
+}
+
+.diceRoll__face--left {
+  transform: rotateY(-90deg) translateZ(60px);
+}
+
+.diceRoll__face--top {
+  transform: rotateX(90deg) translateZ(60px);
+}
+
+.diceRoll__face--bottom {
+  transform: rotateX(-90deg) translateZ(60px);
+}
+
+/* Fallback token for non-d6 dice */
+
+.diceRoll__token {
+  width: 120px;
+  height: 120px;
+  border-radius: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diceRoll__token.is-rolling {
+  animation: tokenRoll var(--roll-ms, 2000ms) cubic-bezier(0.15, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes tokenRoll {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  35% {
+    transform: rotate(380deg) scale(1.05);
+  }
+  70% {
+    transform: rotate(820deg) scale(1.02);
+  }
+  100% {
+    transform: rotate(1080deg) scale(1);
+  }
+}
+
+.diceRoll__tokenInner {
+  font-size: 38px;
+  font-weight: 800;
+  color: rgba(0, 0, 0, 0.85);
+  user-select: none;
+}
+
+.diceRollDouble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+}
+
+.diceRollDouble__diceRow {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: center;
+}
+
+.diceRollDouble__total {
+  font-size: 14px;
+  opacity: 0.95;
+}
