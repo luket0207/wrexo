@@ -2,10 +2,10 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import Modal from "./modal";
 
 export const MODAL_BUTTONS = Object.freeze({
-  OK: "Ok",
-  YES_NO: "YesNo",
-  NONE: "None",
-  CUSTOM_TEXT: "CustomText",
+  OK: "OK",
+  YES_NO: "YES_NO",
+  CUSTOM_TEXT: "CUSTOM_TEXT",
+  NONE: "NONE",
 });
 
 const ModalContext = createContext(null);
@@ -21,57 +21,45 @@ export const ModalProvider = ({ children }) => {
     onClick: null,
     onYes: null,
     onNo: null,
+    onClose: null,
   });
 
   const closeModal = useCallback(() => {
-    setModalState((prev) => ({
-      ...prev,
-      isOpen: false,
-      title: "",
-      content: null,
-      buttons: MODAL_BUTTONS.OK,
-      customButtonText: "Submit",
-      autoClose: null,
-      onClick: null,
-      onYes: null,
-      onNo: null,
-    }));
+    setModalState((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
   const openModal = useCallback(
     ({
-      modalTitle = "",
-      modalContent = null,
+      title,
+      modalContent,
+      content, // allow either name
       buttons = MODAL_BUTTONS.OK,
       customButtonText = "Submit",
       autoClose = null,
       onClick = null,
       onYes = null,
       onNo = null,
+      onClose = null,
     } = {}) => {
+      const resolvedContent = content ?? modalContent ?? null;
+
       setModalState({
         isOpen: true,
-        title: modalTitle,
-        content: modalContent,
+        title: title ?? "",
+        content: resolvedContent,
         buttons,
         customButtonText,
         autoClose,
         onClick,
         onYes,
         onNo,
+        onClose: typeof onClose === "function" ? onClose : closeModal,
       });
     },
-    []
+    [closeModal]
   );
 
-  const value = useMemo(
-    () => ({
-      openModal,
-      closeModal,
-      isModalOpen: modalState.isOpen,
-    }),
-    [openModal, closeModal, modalState.isOpen]
-  );
+  const value = useMemo(() => ({ openModal, closeModal }), [openModal, closeModal]);
 
   return (
     <ModalContext.Provider value={value}>
@@ -87,7 +75,7 @@ export const ModalProvider = ({ children }) => {
         onClick={modalState.onClick}
         onYes={modalState.onYes}
         onNo={modalState.onNo}
-        onClose={closeModal}
+        onClose={modalState.onClose}
       />
     </ModalContext.Provider>
   );
@@ -95,8 +83,6 @@ export const ModalProvider = ({ children }) => {
 
 export const useModal = () => {
   const ctx = useContext(ModalContext);
-  if (!ctx) {
-    throw new Error("useModal must be used within a ModalProvider");
-  }
+  if (!ctx) throw new Error("useModal must be used within a ModalProvider");
   return ctx;
 };

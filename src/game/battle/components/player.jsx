@@ -42,9 +42,6 @@ const HpBar = ({ pokemon }) => {
   return (
     <div className="battle-hp">
       <Bars min={0} max={max} current={current} />
-      <div className="battle-hp__label">
-        HP: <strong>{current}</strong> / {max}
-      </div>
     </div>
   );
 };

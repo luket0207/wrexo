@@ -23,13 +23,14 @@ const BATTLE_PHASE = {
   STARTED: "STARTED",
 };
 
-const DEBUG_MANUAL_CONTROLS = true;
-
 const Battle = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const { rollDice, evenDiceRoll, minMaxDiceRoll } = useDiceRoll();
+
+  // Toggle between "Debug" (manual controls + gated opponent) and "Normal" (player rolls, opponent auto rolls)
+  const [debugManualControls, setDebugManualControls] = useState(true);
 
   // Keep dice functions in refs for safety inside async flows
   const rollDiceRef = useRef(rollDice);
@@ -72,10 +73,10 @@ const Battle = () => {
   const moveMap = useMemo(() => createMoveMap(moves), []);
 
   // Provide a "live" getter so controller always sees latest state
-  const battleStateRef = useRef(battleState);
-  useEffect(() => {
-    battleStateRef.current = battleState;
-  }, [battleState]);
+  const battleStateRef = useRef(null);
+
+  // Keep the ref in sync *during render* so it is always current for click handlers/effects.
+  battleStateRef.current = battleState;
 
   const getBattleState = useCallback(() => battleStateRef.current, []);
 
@@ -153,6 +154,15 @@ const Battle = () => {
     setOpponentAutoRequested(true);
   }, []);
 
+  const toggleMode = useCallback(() => {
+    setDebugManualControls((prev) => {
+      const next = !prev;
+      // When switching back into debug mode, force the user to explicitly continue the opponent.
+      if (next) setOpponentAutoRequested(false);
+      return next;
+    });
+  }, []);
+
   // Opponent auto-roll
   useEffect(() => {
     if (!battleState) return;
@@ -161,7 +171,7 @@ const Battle = () => {
     if (isResolvingTurnRef.current) return;
 
     // In debug mode, opponent only auto-rolls after user clicks "Continue Auto Roll"
-    if (DEBUG_MANUAL_CONTROLS && !opponentAutoRequested) return;
+    if (debugManualControls && !opponentAutoRequested) return;
 
     opponentTurnTokenRef.current += 1;
     const myToken = opponentTurnTokenRef.current;
@@ -176,7 +186,7 @@ const Battle = () => {
         if (cancelled) return;
         if (opponentTurnTokenRef.current !== myToken) return;
 
-        if (DEBUG_MANUAL_CONTROLS) {
+        if (debugManualControls) {
           setOpponentAutoRequested(false);
         }
 
@@ -191,7 +201,7 @@ const Battle = () => {
     return () => {
       cancelled = true;
     };
-  }, [battleState, opponentAutoRequested, runTurn]);
+  }, [battleState, opponentAutoRequested, runTurn, debugManualControls]);
 
   if (initialPlayerTeam.length === 0 || initialOpponentTeam.length === 0) {
     return (
@@ -250,6 +260,17 @@ const Battle = () => {
       </div>
 
       <div className="battle__controls">
+        <div className="battle__controlBlock">
+          <button
+            type="button"
+            onClick={toggleMode}
+            disabled={isResolvingTurnRef.current}
+            title="Toggle between Normal battle flow and Debug/manual controls"
+          >
+            Mode: {debugManualControls ? "Debug (Manual)" : "Normal (Auto Opponent)"}
+          </button>
+        </div>
+
         {battleState.turn === TURN.PLAYER ? (
           <div className="battle__controlBlock">
             <button
@@ -260,7 +281,7 @@ const Battle = () => {
               Roll Dice (Select Move)
             </button>
 
-            {DEBUG_MANUAL_CONTROLS ? (
+            {debugManualControls ? (
               <DebugMoveControls
                 side={TURN.PLAYER}
                 isMyTurn={battleState.turn === TURN.PLAYER}
@@ -272,7 +293,7 @@ const Battle = () => {
           </div>
         ) : (
           <div className="battle__controlBlock">
-            {DEBUG_MANUAL_CONTROLS ? (
+            {debugManualControls ? (
               <>
                 <button
                   type="button"
@@ -295,8 +316,8 @@ const Battle = () => {
                 {battleState.status === "FINISHED"
                   ? "Battle finished."
                   : isResolvingTurnRef.current
-                  ? "Opponent is acting..."
-                  : "Opponent is rolling..."}
+                    ? "Opponent is acting..."
+                    : "Opponent is rolling..."}
               </div>
             )}
           </div>

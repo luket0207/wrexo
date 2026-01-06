@@ -1,234 +1,298 @@
 const moves = [
-  // Fire
+  // ======================
+  // Fire — Common
+  // ======================
   {
     name: "Ember",
     rarity: "Common",
     type: "Fire",
     damage: 5,
-    statusEffect: "Burn",
-    statusEffectStrength: 1,
+    statusEffects: [{ effect: "Burn", strength: 1 }],
   },
   {
     name: "Flame Wheel",
     rarity: "Common",
     type: "Fire",
     damage: 10,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
+
+  // Fire — Rare
   {
     name: "Fire Spin",
     rarity: "Rare",
     type: "Fire",
     damage: 20,
-    statusEffect: "Burn",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Burn", strength: 2 }],
+  },
+  {
+    name: "Fire Blast",
+    rarity: "Rare",
+    type: "Fire",
+    damage: 20,
+    statusEffects: [
+      { effect: "Burn", strength: 2 },
+      { effect: "RASELF", strength: 1 },
+    ],
   },
   {
     name: "Fire Punch",
     rarity: "Rare",
     type: "Fire",
     damage: 30,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
+
+  // Fire — Epic
   {
     name: "Flamethrower",
     rarity: "Epic",
     type: "Fire",
     damage: 40,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
+
+  // Fire — Legendary
   {
-    name: "Fire Blast",
+    name: "Crimson Storm",
     rarity: "Legendary",
     type: "Fire",
     damage: 60,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [{ effect: "RASELF", strength: 2 }],
   },
   {
     name: "Heat Wave",
     rarity: "Legendary",
     type: "Fire",
     damage: 45,
-    statusEffect: "Burn",
-    statusEffectStrength: 3,
+    statusEffects: [{ effect: "Burn", strength: 3 }],
   },
 
-  // Water
+  // ======================
+  // Water — Common
+  // ======================
   {
     name: "Bubble",
     rarity: "Common",
     type: "Water",
     damage: 5,
-    statusEffect: "Paralyse",
-    statusEffectStrength: 1,
+    statusEffects: [{ effect: "Paralyse", strength: 1 }],
   },
   {
     name: "Water Gun",
     rarity: "Common",
     type: "Water",
     damage: 10,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
+
+  // Water — Rare
   {
     name: "Aqua Jet",
     rarity: "Rare",
     type: "Water",
     damage: 30,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
   {
     name: "BubbleBeam",
     rarity: "Rare",
     type: "Water",
     damage: 15,
-    statusEffect: "Confuse",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Confuse", strength: 2 }],
   },
+
+  // Water — Epic
   {
     name: "Scald",
     rarity: "Epic",
     type: "Water",
     damage: 30,
-    statusEffect: "Burn",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Burn", strength: 2 }],
   },
   {
     name: "Surf",
     rarity: "Epic",
     type: "Water",
     damage: 40,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
+
+  // Water — Legendary
   {
     name: "Hydro Pump",
     rarity: "Legendary",
     type: "Water",
     damage: 60,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
   {
     name: "Whirlpool",
     rarity: "Legendary",
     type: "Water",
     damage: 50,
-    statusEffect: "Confuse",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Confuse", strength: 2 }],
   },
 
-  // Grass
+  // ======================
+  // Grass — Common
+  // ======================
   {
     name: "Vine Whip",
     rarity: "Common",
     type: "Grass",
     damage: 10,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
   {
     name: "Poison Powder",
     rarity: "Common",
     type: "Grass",
     damage: 0,
-    statusEffect: "Poison",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Poison", strength: 2 }],
   },
+  {
+    name: "String Shot",
+    rarity: "Common",
+    type: "Grass",
+    damage: 0,
+    statusEffects: [{ effect: "Paralyse", strength: 1 }],
+  },
+  {
+    name: "Poison Sting",
+    rarity: "Common",
+    type: "Grass",
+    damage: 5,
+    statusEffects: [{ effect: "Poison", strength: 1 }],
+  },
+
+  // Grass — Rare
   {
     name: "Razor Leaf",
     rarity: "Rare",
     type: "Grass",
     damage: 30,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
   {
     name: "Mega Drain",
     rarity: "Rare",
     type: "Grass",
     damage: 10,
-    statusEffect: "Heal",
-    statusEffectStrength: 1,
+    statusEffects: [{ effect: "Heal", strength: 1 }],
   },
   {
     name: "Sleep Powder",
     rarity: "Rare",
     type: "Grass",
     damage: 0,
-    statusEffect: "Sleep",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Sleep", strength: 2 }],
   },
+
+  // Grass — Epic
   {
     name: "Cut",
     rarity: "Epic",
     type: "Grass",
     damage: 40,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
+  {
+    name: "Twin Needle",
+    rarity: "Epic",
+    type: "Grass",
+    damage: 25,
+    statusEffects: [{ effect: "RAE", strength: 2.5 }],
+  },
+
+  // Grass — Legendary
   {
     name: "Giga Drain",
     rarity: "Legendary",
     type: "Grass",
     damage: 30,
-    statusEffect: "Heal",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Heal", strength: 2 }],
   },
   {
     name: "SolarBeam",
     rarity: "Legendary",
     type: "Grass",
     damage: 50,
-    statusEffect: "Paralyse",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Paralyse", strength: 2 }],
   },
 
-  // Colourless
+  // ======================
+  // Colourless — Common
+  // ======================
   {
     name: "Scratch",
     rarity: "Common",
     type: "Colourless",
     damage: 5,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
+  },
+  {
+    name: "Tackle",
+    rarity: "Common",
+    type: "Colourless",
+    damage: 10,
+    statusEffects: [],
+  },
+  {
+    name: "Gust",
+    rarity: "Common",
+    type: "Colourless",
+    damage: 10,
+    statusEffects: [],
+  },
+
+  // Colourless — Rare
+  {
+    name: "Quick Attack",
+    rarity: "Rare",
+    type: "Colourless",
+    damage: 20,
+    statusEffects: [{ effect: "RAE", strength: 1 }],
   },
   {
     name: "Headbutt",
     rarity: "Rare",
     type: "Colourless",
     damage: 35,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
+
+  // Colourless — Epic
   {
     name: "Slam",
     rarity: "Epic",
     type: "Colourless",
     damage: 45,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
   },
   {
     name: "Skull Bash",
     rarity: "Epic",
     type: "Colourless",
     damage: 35,
-    statusEffect: "Confuse",
-    statusEffectStrength: 2,
+    statusEffects: [{ effect: "Confuse", strength: 2 }],
   },
   {
     name: "Sky Attack",
     rarity: "Epic",
     type: "Colourless",
     damage: 45,
-    statusEffect: null,
-    statusEffectStrength: null,
+    statusEffects: [],
+  },
+  {
+    name: "Rest",
+    rarity: "Epic",
+    type: "Colourless",
+    damage: 0,
+    statusEffects: [
+      { effect: "Heal", strength: 3 },
+      { effect: "SleepSELF", strength: 1 },
+    ],
   },
 ];
 

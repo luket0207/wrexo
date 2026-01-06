@@ -187,6 +187,23 @@ const allFainted = (team) => {
 const getStatus = (p) => (p && typeof p === "object" ? (p.status ?? {}) : {});
 const setStatus = (p, nextStatus) => ({ ...p, status: nextStatus });
 
+const getStatusEffects = (move) => {
+  if (!move) return [];
+  if (Array.isArray(move.statusEffects)) return move.statusEffects;
+
+  // Back-compat for older move format
+  const effect = typeof move.statusEffect === "string" ? move.statusEffect : null;
+  if (!effect) return [];
+
+  return [
+    {
+      effect,
+      strength: move.statusEffectStrength,
+    },
+  ];
+};
+
+
 export const getPreMoveGate = (battleState, side) => {
   if (!battleState || battleState.status === "FINISHED") return null;
 
@@ -349,76 +366,125 @@ export const prepareStartOfTurn = (battleState) => {
 const applyStatusOnHit = (defenderPokemon, move, messages) => {
   if (!defenderPokemon || !move) return defenderPokemon;
 
-  const effect = typeof move.statusEffect === "string" ? move.statusEffect : null;
-  const strength = clampNonNegativeInt(move.statusEffectStrength);
+  const effects = getStatusEffects(move);
+  if (effects.length === 0) return defenderPokemon;
 
-  if (!effect || strength <= 0) return defenderPokemon;
+  let nextDefender = defenderPokemon;
 
-  const st = getStatus(defenderPokemon);
+  for (let i = 0; i < effects.length; i += 1) {
+    const e = effects[i];
+    const effect = typeof e?.effect === "string" ? e.effect : null;
+    const strength = clampNonNegativeInt(e?.strength);
 
-  if (effect === "Burn") {
-    const nextBurn = clampNonNegativeInt(st.burn) + strength;
-    messages.push(`${defenderPokemon.name} was burned (${nextBurn}).`);
-    return setStatus(defenderPokemon, {
-      ...st,
-      burn: nextBurn,
-      burnJustApplied: true,
-    });
+    if (!effect || strength <= 0) continue;
+
+    const st = getStatus(nextDefender);
+
+    if (effect === "Burn") {
+      const nextBurn = clampNonNegativeInt(st.burn) + strength;
+      messages.push(`${nextDefender.name} was burned (${nextBurn}).`);
+      nextDefender = setStatus(nextDefender, {
+        ...st,
+        burn: nextBurn,
+        burnJustApplied: true,
+      });
+      continue;
+    }
+
+    if (effect === "Poison") {
+      const nextPoison = clampNonNegativeInt(st.poison) + strength;
+      messages.push(`${nextDefender.name} was poisoned (${nextPoison}).`);
+      nextDefender = setStatus(nextDefender, {
+        ...st,
+        poison: nextPoison,
+        poisonJustApplied: true,
+      });
+      continue;
+    }
+
+    if (effect === "Sleep") {
+      const nextSleep = clampNonNegativeInt(st.sleep) + strength;
+      messages.push(`${nextDefender.name} fell asleep (${nextSleep}).`);
+      nextDefender = setStatus(nextDefender, { ...st, sleep: nextSleep });
+      continue;
+    }
+
+    if (effect === "Paralyse") {
+      const nextParalyse = clampNonNegativeInt(st.paralyse) + strength;
+      messages.push(`${nextDefender.name} was paralysed (${nextParalyse}).`);
+      nextDefender = setStatus(nextDefender, { ...st, paralyse: nextParalyse });
+      continue;
+    }
+
+    if (effect === "Confuse") {
+      const nextConfuse = clampNonNegativeInt(st.confusePending) + strength;
+      messages.push(`${nextDefender.name} became confused (${nextConfuse}).`);
+      nextDefender = setStatus(nextDefender, {
+        ...st,
+        confusePending: nextConfuse,
+        confuseSlots: Array.isArray(st.confuseSlots) ? st.confuseSlots : [],
+      });
+      continue;
+    }
   }
 
-  if (effect === "Poison") {
-    const nextPoison = clampNonNegativeInt(st.poison) + strength;
-    messages.push(`${defenderPokemon.name} was poisoned (${nextPoison}).`);
-    return setStatus(defenderPokemon, {
-      ...st,
-      poison: nextPoison,
-      poisonJustApplied: true,
-    });
-  }
+  return nextDefender;
+};
 
-  if (effect === "Sleep") {
+const applySelfStatusOnUse = (attackerPokemon, move, messages) => {
+  if (!attackerPokemon || !move) return attackerPokemon;
+
+  const effects = getStatusEffects(move);
+  if (effects.length === 0) return attackerPokemon;
+
+  let nextAttacker = attackerPokemon;
+
+  for (let i = 0; i < effects.length; i += 1) {
+    const e = effects[i];
+    const effect = typeof e?.effect === "string" ? e.effect : null;
+
+    if (effect !== "SleepSELF") continue;
+
+    const strength = clampNonNegativeInt(e?.strength);
+    if (strength <= 0) continue;
+
+    const st = getStatus(nextAttacker);
     const nextSleep = clampNonNegativeInt(st.sleep) + strength;
-    messages.push(`${defenderPokemon.name} fell asleep (${nextSleep}).`);
-    return setStatus(defenderPokemon, { ...st, sleep: nextSleep });
+
+    messages.push(`${nextAttacker.name} fell asleep (${nextSleep}).`);
+    nextAttacker = setStatus(nextAttacker, { ...st, sleep: nextSleep });
   }
 
-  if (effect === "Paralyse") {
-    const nextParalyse = clampNonNegativeInt(st.paralyse) + strength;
-    messages.push(`${defenderPokemon.name} was paralysed (${nextParalyse}).`);
-    return setStatus(defenderPokemon, { ...st, paralyse: nextParalyse });
-  }
-
-  if (effect === "Confuse") {
-    const nextConfuse = clampNonNegativeInt(st.confusePending) + strength;
-    messages.push(`${defenderPokemon.name} became confused (${nextConfuse}).`);
-    return setStatus(defenderPokemon, {
-      ...st,
-      confusePending: nextConfuse,
-      confuseSlots: Array.isArray(st.confuseSlots) ? st.confuseSlots : [],
-    });
-  }
-
-  return defenderPokemon;
+  return nextAttacker;
 };
 
 const applyHealOnUse = (attackerPokemon, move, messages) => {
   if (!attackerPokemon || !move) return attackerPokemon;
 
-  const effect = typeof move.statusEffect === "string" ? move.statusEffect : null;
-  if (effect !== "Heal") return attackerPokemon;
+  const effects = getStatusEffects(move);
+  if (effects.length === 0) return attackerPokemon;
 
-  const strengthRaw = Number(move.statusEffectStrength);
-  const strength = Number.isFinite(strengthRaw) ? strengthRaw : 0;
+  let totalHeal = 0;
 
-  const healAmountRaw = strength * 10;
-  if (!Number.isFinite(healAmountRaw) || healAmountRaw <= 0) return attackerPokemon;
+  for (let i = 0; i < effects.length; i += 1) {
+    const e = effects[i];
+    const effect = typeof e?.effect === "string" ? e.effect : null;
+    if (effect !== "Heal") continue;
 
-  // Allow fractions like 0.5 -> 5, but keep HP as integers
-  const healAmount = Math.floor(healAmountRaw);
+    const strengthRaw = Number(e?.strength);
+    const strength = Number.isFinite(strengthRaw) ? strengthRaw : 0;
+
+    const raw = strength * 10;
+    if (!Number.isFinite(raw) || raw <= 0) continue;
+
+    totalHeal += Math.floor(raw);
+  }
+
+  if (totalHeal <= 0) return attackerPokemon;
 
   const max = toNumber(attackerPokemon.maxHealth, toNumber(attackerPokemon.health, 0));
   const cur = toNumber(attackerPokemon.health, 0);
-  const nextHp = Math.min(max, cur + healAmount);
+  const nextHp = Math.min(max, cur + totalHeal);
 
   if (nextHp === cur) {
     messages.push(`${attackerPokemon.name} tried to heal, but is already at full HP.`);
@@ -427,6 +493,45 @@ const applyHealOnUse = (attackerPokemon, move, messages) => {
 
   messages.push(`${attackerPokemon.name} healed ${nextHp - cur} HP.`);
   return { ...attackerPokemon, health: nextHp };
+};
+
+const applySelfDamageOnUse = (attackerPokemon, move, messages) => {
+  if (!attackerPokemon || !move) return attackerPokemon;
+
+  const effects = getStatusEffects(move);
+  if (effects.length === 0) return attackerPokemon;
+
+  let totalRecoil = 0;
+
+  for (let i = 0; i < effects.length; i += 1) {
+    const e = effects[i];
+    const effect = typeof e?.effect === "string" ? e.effect : null;
+    if (effect !== "SELF" && effect !== "RASELF") continue;
+
+    const strengthRaw = Number(e?.strength);
+    const strength = Number.isFinite(strengthRaw) ? strengthRaw : 0;
+
+    const raw = strength * 10;
+    if (!Number.isFinite(raw) || raw <= 0) continue;
+
+    const dmg = Math.floor(raw);
+
+    if (effect === "RASELF") {
+      // Controller sets avoided=true when even roll succeeds
+      const avoided = !!e?.avoided;
+      if (avoided) continue;
+    }
+
+    totalRecoil += dmg;
+  }
+
+  if (totalRecoil <= 0) return attackerPokemon;
+
+  const cur = toNumber(attackerPokemon.health, 0);
+  const nextHp = cur - totalRecoil;
+
+  messages.push(`${attackerPokemon.name} took ${totalRecoil} recoil damage.`);
+  return normalizeAfterDamage({ ...attackerPokemon, health: nextHp });
 };
 
 const applyEndOfTurnDots = (battleState, messages) => {
@@ -646,15 +751,21 @@ export const resolveTurn = (
   }
 
   if (move && refreshedAttacker && isAlive(refreshedAttacker)) {
-    const healedAttacker = clampToMaxHealth(applyHealOnUse(refreshedAttacker, move, messages));
+    let updatedAttacker = refreshedAttacker;
 
-    if (healedAttacker !== refreshedAttacker) {
-      const healedTeam = refreshedATeam.map((p, i) => (i === refreshedAIdx ? healedAttacker : p));
+    // Heal effects
+    updatedAttacker = clampToMaxHealth(applyHealOnUse(updatedAttacker, move, messages));
+
+    // Self-applied statuses (SleepSELF)
+    updatedAttacker = applySelfStatusOnUse(updatedAttacker, move, messages);
+
+    if (updatedAttacker !== refreshedAttacker) {
+      const updatedTeam = refreshedATeam.map((p, i) => (i === refreshedAIdx ? updatedAttacker : p));
       workingState = {
         ...workingState,
         [attackerKey]: ensureSideActiveIsValid({
           ...refreshedAttackerSide,
-          team: healedTeam,
+          team: updatedTeam,
         }),
       };
     }
@@ -717,6 +828,27 @@ export const resolveTurn = (
             ...defenderSideState,
             team: nextDTeam,
           }),
+        };
+      }
+    }
+  }
+
+  // Apply SELF / RASELF recoil to the attacker (after move resolution)
+  if (move) {
+    const sideNow = workingState[attackerKey];
+    const idxNow = Number.isFinite(sideNow?.activeIndex) ? sideNow.activeIndex : latestAIdx;
+    const teamNow = Array.isArray(sideNow?.team) ? sideNow.team : latestATeam;
+
+    const atkNow = teamNow[idxNow] ?? null;
+
+    if (atkNow && isAlive(atkNow)) {
+      const afterRecoil = applySelfDamageOnUse(atkNow, move, messages);
+
+      if (afterRecoil !== atkNow) {
+        const nextTeam = teamNow.map((p, i) => (i === idxNow ? afterRecoil : p));
+        workingState = {
+          ...workingState,
+          [attackerKey]: ensureSideActiveIsValid({ ...sideNow, team: nextTeam }),
         };
       }
     }

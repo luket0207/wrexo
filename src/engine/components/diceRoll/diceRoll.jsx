@@ -55,9 +55,7 @@ const DiceRoll = ({
         <div className={`diceRoll__token ${isRolling ? "is-rolling" : "is-landed"}`}>
           <div className="diceRoll__tokenInner">{safeValue}</div>
         </div>
-        <div className="diceRoll__caption">
-          {isRolling ? "Rolling..." : `Result: ${safeValue}`}
-        </div>
+        <div className="diceRoll__caption">{isRolling ? "Rolling..." : `Result: ${safeValue}`}</div>
       </div>
     );
   }
@@ -82,9 +80,7 @@ const DiceRoll = ({
         </div>
       </div>
 
-      <div className="diceRoll__caption">
-        {isRolling ? "Rolling..." : `Result: ${safeValue}`}
-      </div>
+      <div className="diceRoll__caption">{isRolling ? "Rolling..." : `Result: ${safeValue}`}</div>
     </div>
   );
 };
@@ -121,8 +117,9 @@ const DiceRollDouble = ({
 export const useDiceRoll = () => {
   const { openModal } = useModal();
 
-  const openDiceModal = ({ result, sides, rollDurationMs, autoCloseSeconds }) => {
+  const openDiceModal = ({ result, sides, rollDurationMs, autoCloseSeconds, title }) => {
     openModal({
+      title,
       modalContent: (
         <DiceRoll
           value={result}
@@ -132,12 +129,20 @@ export const useDiceRoll = () => {
         />
       ),
       buttons: MODAL_BUTTONS.NONE,
-      autoClose: autoCloseSeconds,
+      autoClose: Number(autoCloseSeconds),
     });
   };
 
-  const openDoubleDiceModal = ({ leftResult, rightResult, sides, rollDurationMs, autoCloseSeconds }) => {
+  const openDoubleDiceModal = ({
+    leftResult,
+    rightResult,
+    sides,
+    rollDurationMs,
+    autoCloseSeconds,
+    title,
+  }) => {
     openModal({
+      title,
       modalContent: (
         <DiceRollDouble
           leftValue={leftResult}
@@ -147,7 +152,7 @@ export const useDiceRoll = () => {
         />
       ),
       buttons: MODAL_BUTTONS.NONE,
-      autoClose: autoCloseSeconds,
+      autoClose: Number(autoCloseSeconds),
     });
   };
 
@@ -157,6 +162,7 @@ export const useDiceRoll = () => {
     sides = 6,
     rollDurationMs = ROLL_DURATION_MS,
     autoCloseSeconds = MODAL_AUTOCLOSE_SECONDS,
+    title = "Rolling Dice",
   } = {}) => {
     const safeMin = Number.isFinite(min) ? min : 1;
     const safeMax = Number.isFinite(max) ? max : 6;
@@ -165,7 +171,7 @@ export const useDiceRoll = () => {
 
     const result = randomInt(lo, hi);
 
-    openDiceModal({ result, sides, rollDurationMs, autoCloseSeconds });
+    openDiceModal({ result, sides, rollDurationMs, autoCloseSeconds, title });
 
     return resolveAfterClose(result, autoCloseSeconds);
   };
@@ -174,6 +180,7 @@ export const useDiceRoll = () => {
     sides = 6,
     rollDurationMs = ROLL_DURATION_MS,
     autoCloseSeconds = MODAL_AUTOCLOSE_SECONDS,
+    title = "Rolling Dice",
   } = {}) => {
     // Double roll is explicitly two dice; by definition it's 1..6 each for now.
     // If you later want other sided dice, we can generalize this.
@@ -181,7 +188,7 @@ export const useDiceRoll = () => {
     const rightResult = randomInt(1, 6);
     const total = leftResult + rightResult;
 
-    openDoubleDiceModal({ leftResult, rightResult, sides: 6, rollDurationMs, autoCloseSeconds });
+    openDoubleDiceModal({ leftResult, rightResult, sides: 6, rollDurationMs, autoCloseSeconds, title });
 
     return resolveAfterClose(total, autoCloseSeconds);
   };
@@ -192,6 +199,7 @@ export const useDiceRoll = () => {
     sides = 6,
     rollDurationMs = ROLL_DURATION_MS,
     autoCloseSeconds = MODAL_AUTOCLOSE_SECONDS,
+    title = "Rolling Dice",
   } = {}) => {
     const safeMin = Number.isFinite(min) ? min : 1;
     const safeMax = Number.isFinite(max) ? max : 6;
@@ -200,7 +208,7 @@ export const useDiceRoll = () => {
 
     const result = randomInt(lo, hi);
 
-    openDiceModal({ result, sides, rollDurationMs, autoCloseSeconds });
+    openDiceModal({ result, sides, rollDurationMs, autoCloseSeconds, title });
 
     const isEven = result % 2 === 0;
     return resolveAfterClose(isEven, autoCloseSeconds);
@@ -209,10 +217,11 @@ export const useDiceRoll = () => {
   const minMaxDiceRoll = ({
     rollDurationMs = ROLL_DURATION_MS,
     autoCloseSeconds = MODAL_AUTOCLOSE_SECONDS,
+    title = "Rolling Dice",
   } = {}) => {
     const result = randomInt(1, 6);
 
-    openDiceModal({ result, sides: 6, rollDurationMs, autoCloseSeconds });
+    openDiceModal({ result, sides: 6, rollDurationMs, autoCloseSeconds, title });
 
     const isMinOrMax = result === 1 || result === 6;
     return resolveAfterClose(isMinOrMax, autoCloseSeconds);
