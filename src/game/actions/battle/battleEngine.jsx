@@ -1,5 +1,5 @@
 // battleEngine.jsx
-import { randomInt } from "../../engine/utils/rng/rng";
+import { randomInt } from "../../../engine/utils/rng/rng";
 
 export const TURN = {
   PLAYER: "PLAYER",

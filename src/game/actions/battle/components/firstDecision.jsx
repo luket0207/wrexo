@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
+import { useDiceRoll } from "../../../../engine/components/diceRoll/diceRoll";
 
 const SAFETY_TIMEOUT_MS = 8000;
 

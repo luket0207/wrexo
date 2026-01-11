@@ -1,0 +1,72 @@
+/* game/gameTemplate/gameTemplate.scss */
+
+.gameTemplateRoot {
+  min-height: 100%;
+  background: #0f172a;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.gameTemplateHeader {
+  display: grid;
+  grid-template-columns: 160px 1fr 140px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #0b1220;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.gameTemplateTitle {
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.gameTemplatePlayers {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gameTemplatePlayer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.gameTemplateSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.gameTemplateName {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.gameTemplateBtn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  background: #1f2937;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.gameTemplateBtn:hover {
+  background: #273449;
+}
+
+.gameTemplateContent {
+  padding: 14px;
+  box-sizing: border-box;
+}

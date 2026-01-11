@@ -1,0 +1,172 @@
+/* game/gameTemplate/components/gameUi.scss */
+.gameUiRoot {
+  background: #0b1220;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.gameUiTopBar {
+  display: grid;
+  grid-template-columns: 160px 1fr 140px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+}
+
+.gameUiTitle {
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.gameUiPlayers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.gameUiPlayerPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.gameUiPlayerPill.is-active {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.gameUiSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.gameUiName {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.gameUiLevel {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.gameUiBtn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  background: #1f2937;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.gameUiBtn:hover {
+  background: #273449;
+}
+
+.gameUiInventories {
+  padding: 0 16px 14px;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gameUiPlayerCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px;
+  box-sizing: border-box;
+  min-height: 120px;
+}
+
+.gameUiPlayerCard.is-active {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.gameUiPlayerCardHeader {
+  margin-bottom: 10px;
+}
+
+.gameUiPlayerCardNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gameUiPlayerCardName {
+  font-weight: 900;
+}
+
+.gameUiPlayerCardLevel {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.gameUiTurnBadge {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gameUiPositionRow {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.gameUiSection {
+  margin-top: 10px;
+}
+
+.gameUiSectionTitle {
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 8px;
+}
+
+.gameUiSlots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gameUiSlots--items {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gameUiSlot {
+  border-radius: 12px;
+  padding: 8px 8px;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  opacity: 0.85;
+}
+
+.gameUiSlot.has-value {
+  opacity: 1;
+}

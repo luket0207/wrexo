@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { randomInt } from "../../../engine/utils/rng/rng";
+import { randomInt } from "../../../../engine/utils/rng/rng";
 
 const shuffleWithRng = (arr) => {
   const copy = Array.isArray(arr) ? [...arr] : [];

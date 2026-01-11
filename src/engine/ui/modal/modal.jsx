@@ -40,6 +40,9 @@ const Modal = ({
     if (!isOpen) return;
 
     const onKeyDown = (e) => {
+      // Do not allow manual close on autoClose modals
+      if (isAutoCloseEnabled) return;
+
       if (e.key === "Escape") footerConfig.safeClose();
     };
 
@@ -53,7 +56,7 @@ const Modal = ({
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [isOpen, footerConfig]);
+  }, [isOpen, isAutoCloseEnabled, footerConfig]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -77,6 +80,9 @@ const Modal = ({
       className="modal-backdrop"
       role="presentation"
       onMouseDown={(e) => {
+        // Do not allow manual close on autoClose modals
+        if (isAutoCloseEnabled) return;
+
         // Close when clicking the backdrop only (not the modal itself)
         if (e.target === e.currentTarget) footerConfig.safeClose();
       }}

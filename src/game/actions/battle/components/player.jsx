@@ -1,6 +1,6 @@
 // Player.jsx
 import React, { useMemo } from "react";
-import Bars from "../../../engine/ui/bars/bars";
+import Bars from "../../../../engine/ui/bars/bars";
 import { getActivePokemon, getBenchPokemon } from "../battleEngine";
 import "../battle.scss";
 

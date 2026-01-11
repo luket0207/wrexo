@@ -8,9 +8,9 @@ import Player from "./components/player";
 import Opponent from "./components/opponent";
 
 import { createBattleState, getTurnLabel, prepareStartOfTurn, TURN } from "./battleEngine";
-import { useDiceRoll } from "../../engine/components/diceRoll/diceRoll";
+import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
 
-import moves from "../../assets/gameContent/moves";
+import moves from "../../../assets/gameContent/moves";
 import { createMoveMap } from "./battleMoveMap";
 import { createTurnController } from "./battleTurnController";
 import DebugMoveControls from "./components/DebugMoveControls";
