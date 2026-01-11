@@ -248,7 +248,9 @@ const useEvents = ({ setGameState }) => {
   const triggerEventsForLanding = useCallback(
     ({ playerId, tileId, tileType, zoneId }) => {
       if (!playerId) throw new Error("triggerEventsForLanding: playerId is required");
+
       const landedZoneId = zoneId == null ? "" : String(zoneId).trim();
+
       let triggered = [];
 
       setGameState((prev) => {
@@ -262,8 +264,8 @@ const useEvents = ({ setGameState }) => {
           for (let i = 0; i < events.length; i += 1) {
             const evt = events[i];
 
-            const tileOk = evt && matchesTile(evt.tile, tileId, tileType);
-            const zoneOk = evt && matchesZone(evt.zone, landedZoneId);
+            const tileOk = !!evt && matchesTile(evt.tile, tileId, tileType);
+            const zoneOk = !!evt && matchesZone(evt.zone, landedZoneId);
 
             if (evt && tileOk && zoneOk) {
               hit.push(evt);
