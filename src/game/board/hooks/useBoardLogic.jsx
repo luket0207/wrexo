@@ -27,7 +27,7 @@ const makeActionKey = () => {
 
 export const useBoardLogic = () => {
   const { rollDice } = useDiceRoll();
-  const { gameState, setGameState, tickEventsEndTurn } = useGame();
+  const { gameState, setGameState, tickEventsEndTurn, triggerEventsForLanding } = useGame();
 
   const tiles = useMemo(() => buildTiles(72), []);
 
@@ -264,6 +264,40 @@ export const useBoardLogic = () => {
         return;
       }
 
+      // If the tile is an encounter tile, we do NOT trigger+consume landing events here,
+      // because PokemonEncounter/useEncounterSelection consumes encounter-specific events.
+      if (landedTile.type === "Grass" || landedTile.type === "Feature") {
+        startEncounterAction({
+          playerId,
+          landedTileId: finalTileId || landedTile.id,
+          landedTile,
+        });
+        return;
+      }
+
+      // trigger landing events for non-encounter tiles
+      if (typeof triggerEventsForLanding === "function") {
+        const zoneCode =
+          (landedTile?.zone && typeof landedTile.zone === "object" ? landedTile.zone.code : null) ||
+          (typeof landedTile?.zone === "string" ? landedTile.zone : null) ||
+          (typeof landedTile?.zoneId === "string" ? landedTile.zoneId : null) ||
+          "EE";
+
+        const res = triggerEventsForLanding({
+          playerId,
+          tileId: finalTileId,
+          tileType: landedTile.type,
+          zoneId: landedTile.zone?.code || null,
+        });
+
+        console.log("[LandingEvents]", {
+          tileId: landedTile.id,
+          type: landedTile.type,
+          zone: zoneCode,
+          res,
+        });
+      }
+
       if (typeof tickEventsEndTurn === "function") tickEventsEndTurn(playerId);
 
       setGameState((prev) => ({
@@ -283,6 +317,7 @@ export const useBoardLogic = () => {
       setGameState,
       startEncounterAction,
       tickEventsEndTurn,
+      triggerEventsForLanding,
     ]
   );
 

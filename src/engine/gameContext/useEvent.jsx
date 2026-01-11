@@ -18,20 +18,24 @@ const normalizeEvent = (evt, overrides = {}) => {
   if (!id) throw new Error("useEvents: event.id is required");
 
   const tile = evt.tile ?? null;
+  const zone = evt.zone ?? evt.zoneId ?? evt.zoneCode ?? null;
   const expires = toIntOrNull(evt.expires);
 
   const createdAt =
     typeof overrides.createdAt === "number"
       ? overrides.createdAt
-      : (typeof evt.createdAt === "number" ? evt.createdAt : Date.now());
+      : typeof evt.createdAt === "number"
+        ? evt.createdAt
+        : Date.now();
 
   const global = typeof overrides.global === "boolean" ? overrides.global : toBool(evt.global);
 
   return {
     id,
     tile,
+    zone,
     expires, // null or number
-    global,  // boolean
+    global, // boolean
     createdAt,
     // Key used to keep global events synchronized across players
     globalKey: `${id}::${createdAt}`,
@@ -221,10 +225,30 @@ const useEvents = ({ setGameState }) => {
     [setGameState]
   );
 
-  const triggerEventsForLanding = useCallback(
-    ({ playerId, tileId, tileType }) => {
-      if (!playerId) throw new Error("triggerEventsForLanding: playerId is required");
+  const matchesZone = (zoneSpec, zoneId) => {
+    if (zoneSpec == null) return true; // no zone constraint means "any zone"
+    const zoneStr = zoneId == null ? "" : String(zoneId);
 
+    if (typeof zoneSpec === "string") {
+      const spec = zoneSpec.trim();
+      if (!spec) return false;
+      return spec === zoneStr;
+    }
+
+    if (typeof zoneSpec === "object") {
+      const specCode =
+        zoneSpec.code ?? zoneSpec.zone ?? zoneSpec.zoneCode ?? zoneSpec.zoneId ?? null;
+      if (specCode == null) return false;
+      return String(specCode) === zoneStr;
+    }
+
+    return false;
+  };
+
+  const triggerEventsForLanding = useCallback(
+    ({ playerId, tileId, tileType, zoneId }) => {
+      if (!playerId) throw new Error("triggerEventsForLanding: playerId is required");
+      const landedZoneId = zoneId == null ? "" : String(zoneId).trim();
       let triggered = [];
 
       setGameState((prev) => {
@@ -237,7 +261,11 @@ const useEvents = ({ setGameState }) => {
 
           for (let i = 0; i < events.length; i += 1) {
             const evt = events[i];
-            if (evt && matchesTile(evt.tile, tileId, tileType)) {
+
+            const tileOk = evt && matchesTile(evt.tile, tileId, tileType);
+            const zoneOk = evt && matchesZone(evt.zone, landedZoneId);
+
+            if (evt && tileOk && zoneOk) {
               hit.push(evt);
             } else {
               keep.push(evt);

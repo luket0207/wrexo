@@ -5,7 +5,7 @@ import "./gameUi.scss";
 import { useGame } from "../../../engine/gameContext/gameContext";
 
 import itemsCatalog from "../../../assets/gameContent/items.jsx";
-import TILES, { TILE_TYPES } from "../../../assets/gameContent/tiles.jsx";
+import TILES, { TILE_TYPES, ZONES } from "../../../assets/gameContent/tiles.jsx";
 
 import PlayerCard from "./gameUi/components/playerCard";
 import {
@@ -31,11 +31,14 @@ const GameUi = ({ onNewGame }) => {
   const [debugSelectedItemByPlayer, setDebugSelectedItemByPlayer] = useState({});
   const [replaceIndexByPlayer, setReplaceIndexByPlayer] = useState({});
 
+  const zoneOptions = useMemo(() => Object.keys(ZONES || {}), []);
+
   // per-player event debug form state
   const [debugEventIdByPlayer, setDebugEventIdByPlayer] = useState({});
   const [debugEventTileByPlayer, setDebugEventTileByPlayer] = useState({});
   const [debugEventExpiresByPlayer, setDebugEventExpiresByPlayer] = useState({});
   const [debugEventGlobalByPlayer, setDebugEventGlobalByPlayer] = useState({});
+  const [debugEventZoneByPlayer, setDebugEventZoneByPlayer] = useState({});
 
   const items = useMemo(() => (Array.isArray(itemsCatalog) ? itemsCatalog : []), []);
   const tiles = useMemo(() => normalizeTilesArray(TILES), []);
@@ -54,7 +57,10 @@ const GameUi = ({ onNewGame }) => {
     [gameState?.turnIndex, players.length]
   );
 
-  const activePlayerId = useMemo(() => players[safeTurnIndex]?.id || null, [players, safeTurnIndex]);
+  const activePlayerId = useMemo(
+    () => players[safeTurnIndex]?.id || null,
+    [players, safeTurnIndex]
+  );
 
   const pendingDecision = gameState?.pendingItemDecision || null;
 
@@ -109,6 +115,10 @@ const GameUi = ({ onNewGame }) => {
     setDebugEventTileByPlayer((prev) => ({ ...prev, [playerId]: value }));
   }, []);
 
+  const onChangeDebugEventZone = useCallback((playerId, value) => {
+    setDebugEventZoneByPlayer((prev) => ({ ...prev, [playerId]: value }));
+  }, []);
+
   const onChangeDebugEventExpires = useCallback((playerId, value) => {
     setDebugEventExpiresByPlayer((prev) => ({ ...prev, [playerId]: value }));
   }, []);
@@ -152,6 +162,7 @@ const GameUi = ({ onNewGame }) => {
           const debugEventTile = debugEventTileByPlayer?.[p.id] ?? "";
           const debugEventExpires = debugEventExpiresByPlayer?.[p.id] ?? "null";
           const debugEventGlobal = !!debugEventGlobalByPlayer?.[p.id];
+          const debugEventZone = debugEventZoneByPlayer?.[p.id] ?? "";
 
           return (
             <PlayerCard
@@ -171,11 +182,14 @@ const GameUi = ({ onNewGame }) => {
               onCancelDecision={onCancelDecision}
               tileIdOptions={tileIdOptions}
               tileTypeOptions={tileTypeOptions}
+              zoneOptions={zoneOptions}
               expiresOptions={expiresOptions}
               debugEventId={debugEventId}
               debugEventTile={debugEventTile}
+              debugEventZone={debugEventZone}
               debugEventExpires={debugEventExpires}
               debugEventGlobal={debugEventGlobal}
+              onChangeDebugEventZone={onChangeDebugEventZone} // <<< ADD THIS LINE
               onChangeDebugEventId={onChangeDebugEventId}
               onChangeDebugEventTile={onChangeDebugEventTile}
               onChangeDebugEventExpires={onChangeDebugEventExpires}

@@ -316,6 +316,26 @@ export const useEncounterSelection = ({
     return evts.map((e) => e?.globalKey || e?.id || "").join("|");
   }, [player?.events]);
 
+  const matchesZone = (zoneSpec, zoneId) => {
+    if (zoneSpec == null) return true;
+    const zoneStr = zoneId == null ? "" : String(zoneId);
+
+    if (typeof zoneSpec === "string") {
+      const spec = zoneSpec.trim();
+      if (!spec) return false;
+      return spec === zoneStr;
+    }
+
+    if (typeof zoneSpec === "object") {
+      const specCode =
+        zoneSpec.code ?? zoneSpec.zone ?? zoneSpec.zoneCode ?? zoneSpec.zoneId ?? null;
+      if (specCode == null) return false;
+      return String(specCode) === zoneStr;
+    }
+
+    return false;
+  };
+
   useEffect(() => {
     if (!actionKey) return;
 
@@ -328,14 +348,9 @@ export const useEncounterSelection = ({
     // Events that apply to THIS landing tile
     // If event.tile is null/undefined => treat as "applies anywhere" (e.g., next encounter)
     const applicable = allEvents.filter((e) => {
-      const tileSpec = e?.tile ?? null;
-      if (tileSpec == null) return true;
-      return matchesTile(tileSpec, tileId, tileType);
-    });
-
-    console.log("[EncounterSelection] actionKey:", actionKey, {
-      playerId: player?.id,
-      eventIds: (Array.isArray(player?.events) ? player.events : []).map((e) => e?.id),
+      const tileOk = matchesTile(e?.tile, tileId, tileType);
+      const zoneOk = matchesZone(e?.zone, zoneId);
+      return tileOk && zoneOk;
     });
 
     const forcePokemonEvt =

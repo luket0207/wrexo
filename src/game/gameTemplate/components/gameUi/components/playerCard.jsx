@@ -18,17 +18,19 @@ const PlayerCard = ({
   onSelectDebugItem,
   onGiveDebugItem,
 
-  // items decision flow
   replaceIndexValue,
   onSetReplaceIndex,
   onConfirmReplace,
   onConfirmDiscard,
   onCancelDecision,
 
-  // event debug dependencies
   tileIdOptions,
   tileTypeOptions,
   expiresOptions,
+
+  zoneOptions,
+  debugEventZone,
+  onChangeDebugEventZone,
 
   debugEventId,
   debugEventTile,
@@ -45,7 +47,10 @@ const PlayerCard = ({
   removeEventFromPlayer,
   setDebugEventIdByPlayer,
 }) => {
-  const pokemonSlots = useMemo(() => makeSlots(3).map((_, i) => player.pokemon?.[i] || null), [player]);
+  const pokemonSlots = useMemo(
+    () => makeSlots(3).map((_, i) => player.pokemon?.[i] || null),
+    [player]
+  );
   const itemLimit = Number(player.itemLimit) || 6;
   const itemSlots = useMemo(
     () => makeSlots(itemLimit).map((_, i) => player.items?.[i] || null),
@@ -102,11 +107,14 @@ const PlayerCard = ({
           player={player}
           tileIdOptions={tileIdOptions}
           tileTypeOptions={tileTypeOptions}
+          zoneOptions={zoneOptions}
           expiresOptions={expiresOptions}
           debugEventId={debugEventId}
           debugEventTile={debugEventTile}
           debugEventExpires={debugEventExpires}
           debugEventGlobal={debugEventGlobal}
+          debugEventZone={debugEventZone}
+          onChangeDebugEventZone={onChangeDebugEventZone}
           onChangeDebugEventId={onChangeDebugEventId}
           onChangeDebugEventTile={onChangeDebugEventTile}
           onChangeDebugEventExpires={onChangeDebugEventExpires}
@@ -127,7 +135,10 @@ const PlayerCard = ({
             const currentHealth = mon ? toNumberSafe(mon.health ?? 0, 0) : 0;
 
             return (
-              <div key={`${player.id}-mon-${idx}`} className={`gameUiSlot ${mon ? "has-value" : ""}`}>
+              <div
+                key={`${player.id}-mon-${idx}`}
+                className={`gameUiSlot ${mon ? "has-value" : ""}`}
+              >
                 {name}
                 {mon ? <Bars min={0} max={maxHealth} current={currentHealth} /> : null}
               </div>
@@ -164,7 +175,11 @@ const PlayerCard = ({
                   </select>
                 </label>
 
-                <button type="button" className="gameUiBtn" onClick={() => onConfirmReplace(player.id)}>
+                <button
+                  type="button"
+                  className="gameUiBtn"
+                  onClick={() => onConfirmReplace(player.id)}
+                >
                   Replace
                 </button>
 

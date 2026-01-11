@@ -5,11 +5,24 @@ export const makeSlots = (count) => new Array(count).fill(null);
 export const toLabel = (value, fallback = "") => {
   if (typeof value === "string") return value;
   if (typeof value === "number") return String(value);
+
   if (value && typeof value === "object") {
+    // Support event tile specs like { zone: "HC" }
+    if (typeof value.zone === "string") return `zone:${value.zone}`;
+    if (typeof value.zoneCode === "string") return `zone:${value.zoneCode}`;
+
+    if (typeof value.id === "string") return value.id;
+    if (typeof value.tileId === "string") return value.tileId;
+
+    if (typeof value.type === "string") return value.type;
+    if (typeof value.tileType === "string") return value.tileType;
+
     if (typeof value.name === "string") return value.name;
     if (typeof value.code === "string") return value.code;
+
     return fallback;
   }
+
   return fallback;
 };
 
@@ -27,6 +40,7 @@ export const toExpiresLabel = (expires) => {
 // We encode tile target dropdown values as:
 //  - "id:T01"
 //  - "type:Grass"
+//  - "zone:HC"
 export const parseTileTargetValue = (value) => {
   const raw = String(value || "");
   if (!raw) return null;
@@ -39,6 +53,7 @@ export const parseTileTargetValue = (value) => {
 
   if (kind === "id") return { tileSpec: rest };
   if (kind === "type") return { tileSpec: rest };
+  if (kind === "zone") return { tileSpec: { zone: rest } };
 
   return null;
 };

@@ -1,23 +1,31 @@
 // game/gameTemplate/components/gameUi/components/EventDebugPanel.jsx
 import React, { useCallback } from "react";
 
-import { toLabel, toExpiresLabel, parseTileTargetValue, parseExpiresValue } from "../utils/gameUiUtils";
+import {
+  toLabel,
+  toExpiresLabel,
+  parseTileTargetValue,
+  parseExpiresValue,
+} from "../utils/gameUiUtils";
 
 const EventDebugPanel = ({
   player,
 
   tileIdOptions,
   tileTypeOptions,
+  zoneOptions,
   expiresOptions,
 
   // controlled form state for THIS player
   debugEventId,
   debugEventTile,
+  debugEventZone,
   debugEventExpires,
   debugEventGlobal,
 
   onChangeDebugEventId,
   onChangeDebugEventTile,
+  onChangeDebugEventZone,
   onChangeDebugEventExpires,
   onChangeDebugEventGlobal,
 
@@ -38,10 +46,12 @@ const EventDebugPanel = ({
     if (!parsed) return;
 
     const expires = parseExpiresValue(debugEventExpires);
+    const zone = String(debugEventZone || "").trim() || null;
 
     const payload = {
       id,
       tile: parsed.tileSpec,
+      zone,
       expires,
     };
 
@@ -53,13 +63,13 @@ const EventDebugPanel = ({
       addEventToPlayer(player.id, payload);
     }
 
-    // Clear ID for quick entry
     if (typeof setDebugEventIdByPlayer === "function") {
       setDebugEventIdByPlayer((prev) => ({ ...prev, [player.id]: "" }));
     }
   }, [
     debugEventId,
     debugEventTile,
+    debugEventZone,
     debugEventExpires,
     debugEventGlobal,
     addEventToPlayer,
@@ -80,6 +90,7 @@ const EventDebugPanel = ({
   );
 
   const canAdd = String(debugEventId || "").trim() && String(debugEventTile || "").trim();
+
   const addButtonLabel = debugEventGlobal ? "Add Global" : "Add";
 
   return (
@@ -98,12 +109,27 @@ const EventDebugPanel = ({
         />
 
         <select
+          value={debugEventZone}
+          onChange={(e) => onChangeDebugEventZone(player.id, e.target.value)}
+          style={{ marginRight: 8 }}
+          aria-label={`Event zone target for ${toLabel(player?.name, "Player")}`}
+        >
+          <option value="">Zone (optional)...</option>
+          {zoneOptions.map((z) => (
+            <option key={z} value={z}>
+              {z}
+            </option>
+          ))}
+        </select>
+
+        <select
           value={debugEventTile}
           onChange={(e) => onChangeDebugEventTile(player.id, e.target.value)}
           style={{ marginRight: 8 }}
           aria-label={`Event tile target for ${toLabel(player?.name, "Player")}`}
         >
-          <option value="">Tile ID or type...</option>
+          <option value="">Tile ID, type, or zone...</option>
+
           <optgroup label="Tile IDs">
             {tileIdOptions.map((id) => (
               <option key={`id:${id}`} value={`id:${id}`}>
@@ -111,6 +137,7 @@ const EventDebugPanel = ({
               </option>
             ))}
           </optgroup>
+
           <optgroup label="Tile Types">
             {tileTypeOptions.map((tp) => (
               <option key={`type:${tp}`} value={`type:${tp}`}>
@@ -161,9 +188,7 @@ const EventDebugPanel = ({
       {/* DEBUG: list events */}
       <div className="gameUiPositionRow" style={{ marginTop: 8 }}>
         <div style={{ width: "100%" }}>
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>
-            Events ({playerEvents.length})
-          </div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Events ({playerEvents.length})</div>
 
           {playerEvents.length === 0 ? (
             <div style={{ fontSize: 12, opacity: 0.8 }}>No events</div>
@@ -188,6 +213,9 @@ const EventDebugPanel = ({
                     </span>
                     <span>
                       <strong>Tile:</strong> {toLabel(evt?.tile, "")}
+                    </span>
+                    <span>
+                      <strong>Zone:</strong> {toLabel(evt?.zone, "")}
                     </span>
                     <span>
                       <strong>Expires:</strong> {toExpiresLabel(evt?.expires)}
