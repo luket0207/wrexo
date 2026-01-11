@@ -31,8 +31,14 @@ export const useBallInventory = ({ playerId, items, setGameState }) => {
     (itemId) => {
       if (!playerId || !itemId) return null;
 
-      let removed = null;
+      // Determine what we will remove (synchronously) from the items prop
+      const itemsArr = Array.isArray(items) ? items : [];
+      const removeIndexInItems = itemsArr.findIndex((it) => getItemId(it) === itemId);
+      if (removeIndexInItems === -1) return null;
 
+      const removed = itemsArr[removeIndexInItems];
+
+      // Apply removal to state (do NOT depend on this to produce the return value)
       setGameState((prev) => {
         const players = Array.isArray(prev?.players) ? prev.players : [];
         const pIndex = players.findIndex((p) => p?.id === playerId);
@@ -44,8 +50,6 @@ export const useBallInventory = ({ playerId, items, setGameState }) => {
         const removeIndex = pItems.findIndex((it) => getItemId(it) === itemId);
         if (removeIndex === -1) return prev;
 
-        removed = pItems[removeIndex];
-
         const nextItems = pItems.filter((_, i) => i !== removeIndex);
         const nextPlayer = { ...p, items: nextItems };
         const nextPlayers = [...players];
@@ -56,7 +60,7 @@ export const useBallInventory = ({ playerId, items, setGameState }) => {
 
       return removed;
     },
-    [playerId, setGameState]
+    [playerId, items, setGameState]
   );
 
   const refund = useCallback(

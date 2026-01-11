@@ -87,12 +87,21 @@ const matchesTile = (tileSpec, tileId, tileType) => {
 };
 
 // FORCE<POKEMON_ID>, but NOT FORCERARITY...
+// Accept separators like FORCE:BU04, FORCE_BU04, FORCE-BU04, FORCE BU04
 const parseForcePokemonEvent = (id) => {
   const raw = String(id || "").trim();
-  if (!raw.startsWith("FORCE")) return null;
-  if (raw.startsWith("FORCERARITY")) return null;
+  if (!raw.toUpperCase().startsWith("FORCE")) return null;
+  if (raw.toUpperCase().startsWith("FORCERARITY")) return null;
 
-  const forcedId = raw.slice("FORCE".length).trim();
+  // Strip prefix + optional separators
+  const rest = raw
+    .slice(5)
+    .replace(/^[:\-_ ]+/, "")
+    .trim();
+  if (!rest) return null;
+
+  // Normalize to a clean ID token (alphanumeric only), uppercase
+  const forcedId = rest.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   if (!forcedId) return null;
 
   return { kind: "FORCE_POKEMON_ID", forcedId, rawId: raw };
@@ -121,7 +130,9 @@ const parseMultiAdjustRarityEvent = (id) => {
 
   const prefix = isIncrease
     ? "INCREASERARITY"
-    : (raw.startsWith("DECREASERARITY") ? "DECREASERARITY" : "REDUCERARITY");
+    : raw.startsWith("DECREASERARITY")
+      ? "DECREASERARITY"
+      : "REDUCERARITY";
 
   const rest = raw.slice(prefix.length).trim();
   if (!rest) return null;
@@ -171,6 +182,36 @@ const parseMultiAdjustRarityEvent = (id) => {
   };
 };
 
+const clampInt = (n, min, max) => Math.max(min, Math.min(max, n));
+
+// INCREASECATCH
+// DECREASECATCH
+const parseCatchAdjustEvent = (id) => {
+  const raw = String(id || "").trim();
+  if (raw === "INCREASECATCH") return { kind: "INCREASE_CATCH", rawId: raw };
+  if (raw === "DECREASECATCH") return { kind: "DECREASE_CATCH", rawId: raw };
+  return null;
+};
+
+const applyCatchAdjustToEncounter = (encounter, incCount, decCount) => {
+  if (!encounter || typeof encounter !== "object") return encounter;
+
+  const base = Number(encounter.catchRate);
+  const safeBase = Number.isFinite(base) ? base : 1;
+
+  // Net delta, but clamp final to 1..5 (6 cannot be achieved this way)
+  const delta = (Number(incCount) || 0) - (Number(decCount) || 0);
+
+  if (delta === 0) return encounter;
+
+  const nextCatchRate = clampInt(Math.round(safeBase + delta), 1, 5);
+
+  // Avoid pointless cloning if unchanged
+  if (nextCatchRate === safeBase) return encounter;
+
+  return { ...encounter, catchRate: nextCatchRate };
+};
+
 const applyMultiAdjustWeights = (weights, decreaseAdjustments, increaseAdjustments) => {
   const next = { ...(weights || {}) };
 
@@ -214,8 +255,12 @@ const chooseEncounterPokemon = ({
 }) => {
   // FORCE BY POKEMON ID
   if (forcedPokemonId) {
-    const targetId = String(forcedPokemonId).trim();
-    const matches = dex.filter((p) => p && String(p.id || "").trim() === targetId);
+    const targetId = String(forcedPokemonId).trim().toUpperCase();
+
+    const matches = dex.filter((p) => {
+      const pid = p && p.id != null ? String(p.id).trim().toUpperCase() : "";
+      return pid === targetId;
+    });
 
     if (matches.length > 0) return matches[randomInt(0, matches.length - 1)];
   }
@@ -234,7 +279,9 @@ const chooseEncounterPokemon = ({
     increaseAdjustments
   );
 
-  const rarityChoice = isValidRarity(forcedRarity) ? forcedRarity : pickWeightedKey(adjustedWeights);
+  const rarityChoice = isValidRarity(forcedRarity)
+    ? forcedRarity
+    : pickWeightedKey(adjustedWeights);
 
   const pooledByRarity = dex.filter(
     (p) => p && p.rarity === rarityChoice && typePool.includes(p.type)
@@ -262,30 +309,62 @@ export const useEncounterSelection = ({
   const [encounter, setEncounter] = useState(null);
 
   const lastKeyRef = useRef(null);
+  const selectedForActionKeyRef = useRef(null);
+
+  const eventsKey = useMemo(() => {
+    const evts = Array.isArray(player?.events) ? player.events : [];
+    return evts.map((e) => e?.globalKey || e?.id || "").join("|");
+  }, [player?.events]);
 
   useEffect(() => {
     if (!actionKey) return;
-    if (lastKeyRef.current === actionKey) return;
-    lastKeyRef.current = actionKey;
+
+    const compositeKey = `${actionKey}::${eventsKey}`;
+    if (lastKeyRef.current === compositeKey) return;
+    lastKeyRef.current = compositeKey;
 
     const allEvents = Array.isArray(player?.events) ? player.events : [];
 
-    // Only events that apply to THIS landing tile
-    const applicable = allEvents.filter((e) => matchesTile(e?.tile, tileId, tileType));
+    // Events that apply to THIS landing tile
+    // If event.tile is null/undefined => treat as "applies anywhere" (e.g., next encounter)
+    const applicable = allEvents.filter((e) => {
+      const tileSpec = e?.tile ?? null;
+      if (tileSpec == null) return true;
+      return matchesTile(tileSpec, tileId, tileType);
+    });
 
-    const forcePokemonEvt = applicable.map((e) => parseForcePokemonEvent(e?.id)).find(Boolean) || null;
-    const forceRarityEvt = applicable.map((e) => parseForceRarityEvent(e?.id)).find(Boolean) || null;
+    console.log("[EncounterSelection] actionKey:", actionKey, {
+      playerId: player?.id,
+      eventIds: (Array.isArray(player?.events) ? player.events : []).map((e) => e?.id),
+    });
+
+    const forcePokemonEvt =
+      applicable.map((e) => parseForcePokemonEvent(e?.id)).find(Boolean) || null;
+    const forceRarityEvt =
+      applicable.map((e) => parseForceRarityEvent(e?.id)).find(Boolean) || null;
     const adjEvt = applicable.map((e) => parseMultiAdjustRarityEvent(e?.id)).find(Boolean) || null;
+
+    if (forcePokemonEvt) {
+      const dexIdsSample = dex.slice(0, 20).map((p) => String(p?.id || "").trim());
+      console.log("[FORCE DEBUG]", {
+        rawEventId: forcePokemonEvt.rawId,
+        forcedId: forcePokemonEvt.forcedId,
+        tileId,
+        tileType,
+        dexCount: dex.length,
+        dexIdsSample,
+      });
+    }
 
     const forcedPokemonId = forcePokemonEvt?.forcedId || null;
     const forcedRarity = forceRarityEvt?.rarity || null;
 
     const decreaseAdjustments =
-      adjEvt && adjEvt.kind === "DECREASE_MULTI" ? (adjEvt.adjustments || []) : [];
+      adjEvt && adjEvt.kind === "DECREASE_MULTI" ? adjEvt.adjustments || [] : [];
     const increaseAdjustments =
-      adjEvt && adjEvt.kind === "INCREASE_MULTI" ? (adjEvt.adjustments || []) : [];
+      adjEvt && adjEvt.kind === "INCREASE_MULTI" ? adjEvt.adjustments || [] : [];
 
-    const next = chooseEncounterPokemon({
+    const nextBase = chooseEncounterPokemon({
       playerLevel: player?.level || 1,
       zoneId,
       locationType,
@@ -296,17 +375,66 @@ export const useEncounterSelection = ({
       increaseAdjustments,
     });
 
+    console.log("[EncounterSelection] base choice:", nextBase?.id, {
+      actionKey,
+      playerId: player?.id,
+      reason: "after chooseEncounterPokemon (before FORCE/catch adjust)",
+    });
+
+    // CATCH ADJUST EVENTS (tile-applicable only)
+    const catchAdjustEvts = applicable.map((e) => parseCatchAdjustEvent(e?.id)).filter(Boolean);
+
+    const hasDirective =
+      !!forcePokemonEvt ||
+      !!forceRarityEvt ||
+      !!adjEvt ||
+      (catchAdjustEvts && catchAdjustEvts.length > 0);
+
+    // If we've already selected an encounter for this actionKey,
+    // do not overwrite it on reruns unless there's a directive to apply.
+    // This prevents "consume event -> rerun -> overwrite forced encounter".
+    if (selectedForActionKeyRef.current === actionKey && !hasDirective) {
+      return;
+    }
+
+    const incCount = catchAdjustEvts.filter((e) => e.kind === "INCREASE_CATCH").length;
+    const decCount = catchAdjustEvts.filter((e) => e.kind === "DECREASE_CATCH").length;
+
+    const next = applyCatchAdjustToEncounter(nextBase, incCount, decCount);
+
+    console.log("[EncounterSelection] final choice:", next?.id, {
+      forcedId: forcePokemonEvt?.forcedId || null,
+      hadForce: !!forcePokemonEvt,
+      incCount,
+      decCount,
+      actionKey,
+    });
+
+    console.log("[EncounterSelection] setEncounter:", next?.id, {
+      actionKey,
+      willConsumeForce: !!forcePokemonEvt,
+    });
+
     setEncounter(next);
+    selectedForActionKeyRef.current = actionKey;
 
     // Consume events after applying.
     // removeEventFromPlayer should remove globally for all players if the event is global.
     if (player?.id && typeof removeEventFromPlayer === "function") {
-      if (forcePokemonEvt) removeEventFromPlayer(player.id, forcePokemonEvt.rawId, { removeAll: false });
-      if (forceRarityEvt) removeEventFromPlayer(player.id, forceRarityEvt.rawId, { removeAll: false });
+      if (forcePokemonEvt)
+        removeEventFromPlayer(player.id, forcePokemonEvt.rawId, { removeAll: false });
+      if (forceRarityEvt)
+        removeEventFromPlayer(player.id, forceRarityEvt.rawId, { removeAll: false });
       if (adjEvt) removeEventFromPlayer(player.id, adjEvt.rawId, { removeAll: false });
+
+      // Remove each catch adjust event instance (one-by-one)
+      for (let i = 0; i < catchAdjustEvts.length; i += 1) {
+        removeEventFromPlayer(player.id, catchAdjustEvts[i].rawId, { removeAll: false });
+      }
     }
   }, [
     actionKey,
+    eventsKey,
     player?.id,
     player?.level,
     zoneId,

@@ -48,15 +48,23 @@ const CATCH_TABLE = Object.freeze({
     CATCH_OUTCOME.ESCAPE,
     CATCH_OUTCOME.ESCAPE,
   ],
+  1: [
+    CATCH_OUTCOME.CATCH,
+    CATCH_OUTCOME.ESCAPE,
+    CATCH_OUTCOME.ESCAPE,
+    CATCH_OUTCOME.ESCAPE,
+    CATCH_OUTCOME.RUN_AWAY,
+    CATCH_OUTCOME.RUN_AWAY,
+  ],
 });
 
 const clampInt = (n, min, max) => Math.max(min, Math.min(max, n));
 
 const toRateKey = (rate) => {
   const r = Number(rate);
-  if (!Number.isFinite(r)) return 2;
-  // Table defines 2..6; clamp to keep behavior deterministic.
-  return clampInt(Math.round(r), 2, 6);
+  if (!Number.isFinite(r)) return 1;
+  // Table defines 1..6; clamp to keep behavior deterministic.
+  return clampInt(Math.round(r), 1, 6);
 };
 
 const shuffleInPlace = (arr) => {
@@ -71,7 +79,7 @@ const shuffleInPlace = (arr) => {
 
 export const buildRandomOutcomeMap = (effectiveCatchRate) => {
   const rateKey = toRateKey(effectiveCatchRate);
-  const base = CATCH_TABLE[rateKey] || CATCH_TABLE[2];
+  const base = CATCH_TABLE[rateKey] || CATCH_TABLE[1];
 
   // Randomize which dice face maps to which outcome (new shuffle per throw).
   // For rate 6 it is all Catch, but we keep this consistent.
@@ -103,14 +111,14 @@ export const resolveCatchAttempt = async ({
   }
 
   const baseRate = Number(catchRate);
-  const safeBase = Number.isFinite(baseRate) ? baseRate : 2;
+  const safeBase = Number.isFinite(baseRate) ? baseRate : 1;
 
   // IMPORTANT:
   // - Normal throws are clamped to 2..5 (cannot reach 6 via bonuses).
   // - Master Ball uses a locked 6 (100% catch).
   const effectiveRate = forceRate6
     ? 6
-    : clampInt(Math.round(safeBase + Number(ballBonus || 0)), 2, 5);
+    : clampInt(Math.round(safeBase + Number(ballBonus || 0)), 1, 5);
 
   const mapping = buildRandomOutcomeMap(effectiveRate);
 

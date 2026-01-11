@@ -43,7 +43,7 @@ const normalizeEvent = (evt, overrides = {}) => {
 // - string: matches tileId OR tileType
 // - object: matches { id/tileId } OR { type/tileType }
 const matchesTile = (tileSpec, tileId, tileType) => {
-  if (tileSpec == null) return false;
+  if (tileSpec == null) return true;
 
   const idStr = tileId == null ? "" : String(tileId);
   const typeStr = tileType == null ? "" : String(tileType);
