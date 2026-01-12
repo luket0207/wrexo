@@ -1,5 +1,5 @@
 // game/gameTemplate/components/gameUi.jsx
-import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import "./gameUi.scss";
 
 import { useGame } from "../../../engine/gameContext/gameContext";
@@ -55,27 +55,11 @@ const GameUi = ({ onNewGame }) => {
     [gameState?.turnIndex, players.length]
   );
 
-  const activePlayerId = useMemo(
-    () => players[safeTurnIndex]?.id || null,
-    [players, safeTurnIndex]
-  );
+  const activePlayer = useMemo(() => players[safeTurnIndex] || null, [players, safeTurnIndex]);
+
+  const activePlayerId = activePlayer?.id || null;
 
   const pendingDecision = gameState?.pendingItemDecision || null;
-
-  // NEW: scrolling refs
-  const inventoriesRef = useRef(null);
-  const playerRowRefs = useRef({});
-
-  useEffect(() => {
-    if (!activePlayerId) return;
-
-    const el = playerRowRefs.current?.[activePlayerId] || null;
-    if (!el) return;
-
-    // Scroll the active player card into view within the scroll container.
-    // "nearest" avoids big jumps if it's already mostly visible.
-    el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
-  }, [activePlayerId]);
 
   const onSelectDebugItem = useCallback((playerId, itemId) => {
     setDebugSelectedItemByPlayer((prev) => ({ ...prev, [playerId]: itemId }));
@@ -162,13 +146,9 @@ const GameUi = ({ onNewGame }) => {
         </button>
       </div>
 
-      <div
-        className="gameUiInventories"
-        aria-label="Player inventories"
-        ref={inventoriesRef}
-      >
-        {players.map((p) => {
-          const isActive = p.id === activePlayerId;
+      <div className="gameUiInventories" aria-label="Active player inventory">
+        {!activePlayer ? null : (() => {
+          const p = activePlayer;
 
           const selectedItemId = debugSelectedItemByPlayer?.[p.id] || "";
           const replaceIndexValue =
@@ -181,49 +161,41 @@ const GameUi = ({ onNewGame }) => {
           const debugEventZone = debugEventZoneByPlayer?.[p.id] ?? "";
 
           return (
-            <div
-              key={p.id}
-              ref={(el) => {
-                if (el) playerRowRefs.current[p.id] = el;
-                else delete playerRowRefs.current[p.id];
-              }}
-            >
-              <PlayerCard
-                player={p}
-                isActive={isActive}
-                activePlayerId={activePlayerId}
-                items={items}
-                pendingDecision={pendingDecision}
-                selectedItemId={selectedItemId}
-                onSelectDebugItem={onSelectDebugItem}
-                onGiveDebugItem={onGiveDebugItem}
-                replaceIndexValue={replaceIndexValue}
-                onSetReplaceIndex={onSetReplaceIndex}
-                onConfirmReplace={onConfirmReplace}
-                onConfirmDiscard={onConfirmDiscard}
-                onCancelDecision={onCancelDecision}
-                tileIdOptions={tileIdOptions}
-                tileTypeOptions={tileTypeOptions}
-                zoneOptions={zoneOptions}
-                expiresOptions={expiresOptions}
-                debugEventId={debugEventId}
-                debugEventTile={debugEventTile}
-                debugEventZone={debugEventZone}
-                debugEventExpires={debugEventExpires}
-                debugEventGlobal={debugEventGlobal}
-                onChangeDebugEventZone={onChangeDebugEventZone}
-                onChangeDebugEventId={onChangeDebugEventId}
-                onChangeDebugEventTile={onChangeDebugEventTile}
-                onChangeDebugEventExpires={onChangeDebugEventExpires}
-                onChangeDebugEventGlobal={onChangeDebugEventGlobal}
-                addEventToPlayer={addEventToPlayer}
-                addGlobalEventToAllPlayers={addGlobalEventToAllPlayers}
-                removeEventFromPlayer={removeEventFromPlayer}
-                setDebugEventIdByPlayer={setDebugEventIdByPlayer}
-              />
-            </div>
+            <PlayerCard
+              player={p}
+              isActive={true}
+              activePlayerId={activePlayerId}
+              items={items}
+              pendingDecision={pendingDecision}
+              selectedItemId={selectedItemId}
+              onSelectDebugItem={onSelectDebugItem}
+              onGiveDebugItem={onGiveDebugItem}
+              replaceIndexValue={replaceIndexValue}
+              onSetReplaceIndex={onSetReplaceIndex}
+              onConfirmReplace={onConfirmReplace}
+              onConfirmDiscard={onConfirmDiscard}
+              onCancelDecision={onCancelDecision}
+              tileIdOptions={tileIdOptions}
+              tileTypeOptions={tileTypeOptions}
+              zoneOptions={zoneOptions}
+              expiresOptions={expiresOptions}
+              debugEventId={debugEventId}
+              debugEventTile={debugEventTile}
+              debugEventZone={debugEventZone}
+              debugEventExpires={debugEventExpires}
+              debugEventGlobal={debugEventGlobal}
+              onChangeDebugEventZone={onChangeDebugEventZone}
+              onChangeDebugEventId={onChangeDebugEventId}
+              onChangeDebugEventTile={onChangeDebugEventTile}
+              onChangeDebugEventExpires={onChangeDebugEventExpires}
+              onChangeDebugEventGlobal={onChangeDebugEventGlobal}
+              addEventToPlayer={addEventToPlayer}
+              addGlobalEventToAllPlayers={addGlobalEventToAllPlayers}
+              removeEventFromPlayer={removeEventFromPlayer}
+              setDebugEventIdByPlayer={setDebugEventIdByPlayer}
+            />
           );
-        })}
+        })()}
       </div>
     </header>
   );

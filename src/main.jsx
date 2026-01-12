@@ -5,6 +5,8 @@ import { ModalProvider } from "./engine/ui/modal/modalContext";
 import { GameProvider } from "./engine/gameContext/gameContext";
 import { ToastProvider } from "./engine/ui/toast/toast";
 
+import TurnTransitionListener from "./engine/gameContext/turnTransitionListener"; 
+
 import App from "./App";
 import "./index.scss";
 
@@ -19,6 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <GameProvider>
         <ModalProvider>
           <ToastProvider>
+            <TurnTransitionListener />
             <App />
           </ToastProvider>
         </ModalProvider>

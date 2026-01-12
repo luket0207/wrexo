@@ -3,6 +3,7 @@ import { useCallback, useMemo } from "react";
 
 import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
 import { useGame } from "../../../engine/gameContext/gameContext";
+import { useTurnTransition } from "../../../engine/gameContext/useTurnTransition";
 import { TILE_TYPE_TO_ACTION_KIND } from "../../gameTemplate/components/actionRegistry";
 
 import { buildTiles, movePlayerBySteps } from "../boardMovement";
@@ -28,7 +29,9 @@ const makeActionKey = () => {
 
 export const useBoardLogic = () => {
   const { rollDice } = useDiceRoll();
-  const { gameState, setGameState, tickEventsEndTurn, triggerEventsForLanding } = useGame();
+  const { endTurn } = useTurnTransition();
+
+  const { gameState, setGameState, triggerEventsForLanding } = useGame();
 
   const tiles = useMemo(() => buildTiles(72), []);
 
@@ -256,20 +259,15 @@ export const useBoardLogic = () => {
 
       const landedTile = tiles?.[finalIndex] || null;
 
+      // If we cannot resolve a landing tile, end the turn immediately
       if (!landedTile) {
-        if (typeof tickEventsEndTurn === "function") tickEventsEndTurn(playerId);
-
-        setGameState((prev) => ({
-          ...prev,
-          pendingMove: null,
-          isAnimating: false,
-          turnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
-        }));
+        endTurn({ endingPlayerId: playerId });
         return;
       }
 
       const tileType = String(landedTile?.type || "");
 
+      // Encounter / action tiles: action resolves later and ends the turn via endActiveAction.
       if (tileType === "Grass" || tileType === "Feature" || tileType === "PokeMart") {
         startTileAction({
           playerId,
@@ -302,14 +300,8 @@ export const useBoardLogic = () => {
         });
       }
 
-      if (typeof tickEventsEndTurn === "function") tickEventsEndTurn(playerId);
-
-      setGameState((prev) => ({
-        ...prev,
-        pendingMove: null,
-        isAnimating: false,
-        turnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
-      }));
+      // Normal end of board turn
+      endTurn({ endingPlayerId: playerId });
     },
     [
       canChooseDirection,
@@ -320,8 +312,8 @@ export const useBoardLogic = () => {
       updatePlayerPosition,
       setGameState,
       startTileAction,
-      tickEventsEndTurn,
       triggerEventsForLanding,
+      endTurn,
     ]
   );
 
