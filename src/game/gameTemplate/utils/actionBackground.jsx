@@ -29,8 +29,9 @@ const FEATURE_BG_BY_TILE_ID = Object.freeze({
   T47: minraMinesImg,
   T51: teapotFallsImg,
   T59: princeMillImg,
-  T63: dinasranRuinsImg,
-  T71: langoValleyImg,
+  T63: langoValleyImg,
+  T71: dinasranRuinsImg,
+  
 });
 
 const ZONE_FEATURES = Object.freeze({

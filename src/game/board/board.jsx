@@ -57,7 +57,7 @@ const Board = () => {
     const size = 900;
     const center = size / 2;
     // Base settings
-    const baseRadius = 360;
+    const baseRadius = 380;
     // Target spacing between tiles in pixels
     const stepPx = 5;
     // Wobble amplitude in pixels
