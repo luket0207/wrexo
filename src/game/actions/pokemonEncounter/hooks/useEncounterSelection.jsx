@@ -295,6 +295,29 @@ const chooseEncounterPokemon = ({
   return null;
 };
 
+// --- SHINY CONFIG ---
+// For debugging: 1 in 2 (50/50). For production later: set to 500 (1 in 500).
+const SHINY_DENOMINATOR = 500;
+
+const rollIsShiny = (denominator) => {
+  const denom = Number(denominator);
+  if (!Number.isFinite(denom) || denom <= 1) return true; // defensive: denom<=1 => always shiny
+  // randomInt is inclusive; 1..denom => shiny if 1
+  return randomInt(1, Math.floor(denom)) === 1;
+};
+
+const withShinyFlag = (encounter, isShiny) => {
+  if (!encounter || typeof encounter !== "object") return encounter;
+
+  // IMPORTANT: clone so we do not mutate dex entries
+  const next = { ...encounter };
+
+  // Keep the field strictly boolean for downstream code
+  next.shiny = !!isShiny;
+
+  return next;
+};
+
 export const useEncounterSelection = ({
   pokemonDex,
   player,
@@ -345,8 +368,6 @@ export const useEncounterSelection = ({
 
     const allEvents = Array.isArray(player?.events) ? player.events : [];
 
-    // Events that apply to THIS landing tile
-    // If event.tile is null/undefined => treat as "applies anywhere" (e.g., next encounter)
     const applicable = allEvents.filter((e) => {
       const tileOk = matchesTile(e?.tile, tileId, tileType);
       const zoneOk = matchesZone(e?.zone, zoneId);
@@ -390,13 +411,6 @@ export const useEncounterSelection = ({
       increaseAdjustments,
     });
 
-    console.log("[EncounterSelection] base choice:", nextBase?.id, {
-      actionKey,
-      playerId: player?.id,
-      reason: "after chooseEncounterPokemon (before FORCE/catch adjust)",
-    });
-
-    // CATCH ADJUST EVENTS (tile-applicable only)
     const catchAdjustEvts = applicable.map((e) => parseCatchAdjustEvent(e?.id)).filter(Boolean);
 
     const hasDirective =
@@ -405,9 +419,6 @@ export const useEncounterSelection = ({
       !!adjEvt ||
       (catchAdjustEvts && catchAdjustEvts.length > 0);
 
-    // If we've already selected an encounter for this actionKey,
-    // do not overwrite it on reruns unless there's a directive to apply.
-    // This prevents "consume event -> rerun -> overwrite forced encounter".
     if (selectedForActionKeyRef.current === actionKey && !hasDirective) {
       return;
     }
@@ -415,9 +426,17 @@ export const useEncounterSelection = ({
     const incCount = catchAdjustEvts.filter((e) => e.kind === "INCREASE_CATCH").length;
     const decCount = catchAdjustEvts.filter((e) => e.kind === "DECREASE_CATCH").length;
 
-    const next = applyCatchAdjustToEncounter(nextBase, incCount, decCount);
+    const nextAdjusted = applyCatchAdjustToEncounter(nextBase, incCount, decCount);
+
+    // --- SHINY ROLL (after final encounter chosen) ---
+    const isShiny = nextAdjusted ? rollIsShiny(SHINY_DENOMINATOR) : false;
+    const next = withShinyFlag(nextAdjusted, isShiny);
+
+    setEncounter(next);
+    selectedForActionKeyRef.current = actionKey;
 
     console.log("[EncounterSelection] final choice:", next?.id, {
+      pokemon: next,
       forcedId: forcePokemonEvt?.forcedId || null,
       hadForce: !!forcePokemonEvt,
       incCount,

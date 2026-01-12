@@ -102,6 +102,33 @@ export const GameProvider = ({ children, initialState = null }) => {
   // ============================
 
   const TEAM_MAX = 3;
+  const SHINY_HP_BONUS = 10;
+
+  const applyShinyHpBonus = (pokemon) => {
+    if (!pokemon || typeof pokemon !== "object") return pokemon;
+    if (!pokemon.shiny) return pokemon;
+
+    const baseHealth = Number(pokemon.health);
+    const baseMaxHealth = Number(pokemon.maxHealth);
+
+    const safeHealth = Number.isFinite(baseHealth)
+      ? baseHealth
+      : Number.isFinite(baseMaxHealth)
+        ? baseMaxHealth
+        : 0;
+
+    const safeMaxHealth = Number.isFinite(baseMaxHealth)
+      ? baseMaxHealth
+      : Number.isFinite(baseHealth)
+        ? baseHealth
+        : 0;
+
+    return {
+      ...pokemon,
+      health: safeHealth + SHINY_HP_BONUS,
+      maxHealth: safeMaxHealth + SHINY_HP_BONUS,
+    };
+  };
 
   const addPokemonToTeam = useCallback((playerId, pokemonToAdd, opts = {}) => {
     const { mode = "replace", replaceIndex = 0 } = opts || {};
@@ -110,6 +137,10 @@ export const GameProvider = ({ children, initialState = null }) => {
     if (!pokemonToAdd || typeof pokemonToAdd !== "object") {
       throw new Error("addPokemonToTeam: pokemonToAdd must be an object");
     }
+
+    // Apply shiny HP bonus at the point of adding to party.
+    // Clone to avoid mutating caller objects (e.g. encounter selection).
+    const pokemonWithBonuses = applyShinyHpBonus({ ...pokemonToAdd });
 
     let result = { ok: false, reason: "unknown" };
 
@@ -125,7 +156,7 @@ export const GameProvider = ({ children, initialState = null }) => {
       const currentTeam = Array.isArray(player?.pokemon) ? player.pokemon : [];
 
       if (currentTeam.length < TEAM_MAX) {
-        const nextTeam = [...currentTeam, pokemonToAdd];
+        const nextTeam = [...currentTeam, pokemonWithBonuses];
         const nextPlayer = { ...player, pokemon: nextTeam };
         const nextPlayers = [...players];
         nextPlayers[playerIndex] = nextPlayer;
@@ -145,13 +176,18 @@ export const GameProvider = ({ children, initialState = null }) => {
           : 0;
 
       const nextTeam = currentTeam.slice(0, TEAM_MAX);
-      nextTeam[safeIndex] = pokemonToAdd;
+      nextTeam[safeIndex] = pokemonWithBonuses;
 
       const nextPlayer = { ...player, pokemon: nextTeam };
       const nextPlayers = [...players];
       nextPlayers[playerIndex] = nextPlayer;
 
-      result = { ok: true, action: "replaced", replacedIndex: safeIndex, teamSize: nextTeam.length };
+      result = {
+        ok: true,
+        action: "replaced",
+        replacedIndex: safeIndex,
+        teamSize: nextTeam.length,
+      };
       return { ...prev, players: nextPlayers };
     });
 

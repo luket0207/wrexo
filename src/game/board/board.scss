@@ -1,46 +1,65 @@
-/* board.scss (updated - tile styles removed) */
+/* board.scss */
+
 .boardRoot {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 16px;
-  align-items: start;
   width: 100%;
-  padding: 16px;
   box-sizing: border-box;
+  position: relative;
+  display: grid;
+  grid-template-columns: 900px 300px;
 }
 
 .boardWrap {
   width: 100%;
   overflow: auto;
-  border-radius: 14px;
-  background: #0f172a;
-  padding: 14px;
   box-sizing: border-box;
+  position: absolute;
+  top: -40px;
+  left: -30px;
 }
 
+/* container for absolute layers */
 .boardGrid {
-  display: grid;
-  grid-template-columns: repeat(12, 72px);
-  grid-auto-rows: 72px;
-  gap: 8px;
-  width: max-content;
-  padding: 8px;
-  background: #111827;
-  border-radius: 12px;
-  box-sizing: border-box;
+  position: relative;
+  background: transparent;
 }
 
-/* Pieces remain in board.scss (they are not tile-specific) */
+/* explicit layers */
+.boardTilesLayer {
+  position: relative;
+  z-index: 1;
+}
+
+.boardPiecesLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1000; /* above ALL tiles */
+  pointer-events: none; /* pieces never block clicking tiles */
+}
+
+/* Absolute-position each tile wrapper at computed coords */
+.boardTilePos {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+/* Each piece positioned in the overlay */
+.boardPiecePos {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Piece styling can live here */
 .piece {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   display: grid;
   place-items: center;
-  transform: translateZ(0);
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  box-sizing: border-box;
 }
 
 .piece.is-active {
@@ -57,14 +76,27 @@
   user-select: none;
 }
 
+.tilePiecesAbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tilePiecePos {
+  position: absolute;
+  pointer-events: none;
+}
+
 /* Sidebar remains in board.scss (board-level UI) */
 .boardSidebar {
   background: #0b1220;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
   padding: 14px;
   box-sizing: border-box;
   color: rgba(255, 255, 255, 0.92);
+  grid-column: 2;
+  width: 300px;
+  height: 900px;
 }
 
 .boardSidebar__header {
@@ -101,7 +133,10 @@
   cursor: pointer;
   background: #1f2937;
   color: rgba(255, 255, 255, 0.92);
-  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease,
+    background 120ms ease;
 }
 
 .boardSidebar__rollBtn:hover {

@@ -3,12 +3,19 @@
   background: #0b1220;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.92);
+  width: 300px;
+
+  height: 900px;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
 }
 
 .gameUiTopBar {
-  display: grid;
-  grid-template-columns: 160px 1fr 140px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 12px;
   padding: 14px 16px;
   box-sizing: border-box;
@@ -21,10 +28,10 @@
 
 .gameUiPlayers {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: stretch;
 }
 
 .gameUiPlayerPill {
@@ -35,6 +42,9 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
+
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .gameUiPlayerPill.is-active {
@@ -74,11 +84,20 @@
 }
 
 .gameUiInventories {
+  /* This becomes the scroll container */
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+
   padding: 0 16px 14px;
   box-sizing: border-box;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+
+  /* optional: smooth scrolling for scrollIntoView */
+  scroll-behavior: smooth;
 }
 
 .gameUiPlayerCard {

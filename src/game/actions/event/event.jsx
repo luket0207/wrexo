@@ -1,3 +1,5 @@
+// src/game/actions/event/event.jsx
+
 import React from "react";
 import { useActions } from "../../../engine/gameContext/useActions";
 

@@ -2,9 +2,7 @@
 
 .gameTemplateRoot {
   min-height: 100%;
-  background: #0f172a;
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
 }
 
 .gameTemplateHeader {
@@ -67,6 +65,6 @@
 }
 
 .gameTemplateContent {
-  padding: 14px;
-  box-sizing: border-box;
+  height: 900px;
+  width: 900px;
 }

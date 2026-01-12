@@ -181,7 +181,6 @@ const PokemonEncounter = () => {
           <PokemonImage
             pokemon={encounter}
             animate
-            shiny={false}
             back={false}
             style={{ width: 96, height: 96, imageRendering: "pixelated" }}
           />

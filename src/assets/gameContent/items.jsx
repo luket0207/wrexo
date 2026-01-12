@@ -74,7 +74,7 @@ const items = [
   {
     id: "ITEM7",
     name: "Item Finder",
-    rarity: "Epic",
+    rarity: "Rare",
     useInBattle: false,
     useFromMenu: false,
     useFromBoardDiceRoll: false,

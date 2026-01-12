@@ -9,6 +9,12 @@ import GameScene from "./components/gameScene";
 import { GameProvider, buildNewGameState } from "../../engine/gameContext/gameContext";
 import { useGame } from "../../engine/gameContext/gameContext";
 
+import { getActionConfig } from "./components/actionRegistry";
+
+import boardBgImg from "../../assets/images/board/board.png";
+
+import { getActionBackgroundStyle } from "./utils/actionBackground";
+
 const DEFAULT_PLAYERS = [
   { name: "Player 1", color: "red" },
   { name: "Player 2", color: "blue" },
@@ -29,20 +35,48 @@ const GameLayout = ({ onNewGame }) => {
   const { gameState } = useGame();
   const activeAction = gameState?.activeAction || null;
 
-  const view = useMemo(() => {
+  const hideUi = useMemo(() => {
     const kind = activeAction?.kind;
-    if (kind === "pokemonEncounter") return "pokemonEncounter";
-    if (kind === "event") return "event";
-    return "board";
+    const cfg = getActionConfig(kind);
+    return !!cfg?.hideUi;
+  }, [activeAction?.kind]);
+
+  const actionBgStyle = useMemo(() => {
+    return getActionBackgroundStyle(activeAction);
   }, [activeAction]);
 
-  const hideUi = view === "pokemonEncounter";
+  const view = useMemo(() => {
+    const kind = activeAction?.kind;
+    return kind ? "action" : "board";
+  }, [activeAction?.kind]);
+
+  const boardBgStyle = useMemo(
+    () => ({
+      backgroundImage: `url(${boardBgImg})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    }),
+    []
+  );
+
+  const containerStyle = useMemo(() => {
+    if (view === "board") return boardBgStyle;
+    return actionBgStyle || undefined;
+  }, [view, boardBgStyle, actionBgStyle]);
+
+  const rootStyle = useMemo(() => {
+    if (view === "board") {
+      return { marginRight: "300px" };
+    }
+    return undefined;
+  }, [view]);
 
   return (
-    <div className="gameTemplateRoot">
+    <div className="gameTemplateRoot" style={rootStyle}>
       {!hideUi ? <GameUi onNewGame={onNewGame} /> : null}
 
-      <main className="gameTemplateContent">
+      <main className="gameTemplateContent" style={containerStyle}>
         <GameScene />
       </main>
     </div>

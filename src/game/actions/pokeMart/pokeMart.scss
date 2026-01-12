@@ -1,0 +1,78 @@
+.pokeMartRoot {
+  padding: 16px;
+}
+
+.pokeMartSubtitle {
+  margin-top: 6px;
+  margin-bottom: 14px;
+  opacity: 0.85;
+}
+
+.pokeMartCards {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pokeMartCardSlot {
+  position: relative;
+  transition: transform 250ms ease, opacity 250ms ease;
+
+  &.chosen {
+    transform: scale(1.04);
+  }
+
+  &.notChosen {
+    opacity: 0.9;
+  }
+}
+
+/*
+  Shuffle animation:
+  - While in .shuffling, each slot wiggles and crosses slightly.
+  - The actual "mix" is the JS shuffle (we reorder array after animation).
+*/
+.pokeMartCards.shuffling .pokeMartCardSlot {
+  animation: pokeMartShuffle 900ms ease-in-out 1;
+}
+
+.pokeMartCards.shuffling .pokeMartCardSlot:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.pokeMartCards.shuffling .pokeMartCardSlot:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.pokeMartCards.shuffling .pokeMartCardSlot:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+@keyframes pokeMartShuffle {
+  0% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  20% {
+    transform: translateX(22px) translateY(-8px) rotate(2deg);
+  }
+  45% {
+    transform: translateX(-26px) translateY(6px) rotate(-2deg);
+  }
+  70% {
+    transform: translateX(18px) translateY(10px) rotate(1deg);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+}
+
+.pokeMartFooter {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+
+  .secondary {
+    opacity: 0.9;
+  }
+}

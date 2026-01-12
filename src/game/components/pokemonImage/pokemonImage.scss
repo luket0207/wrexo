@@ -1,0 +1,27 @@
+.pokemon-image-wrapper {
+  position: relative;
+  display: inline-block;
+
+  &.shiny::before {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    z-index: 0;
+    pointer-events: none;
+
+    background: radial-gradient(
+      circle,
+      rgba(255, 230, 120, 0.8) 0%,
+      rgba(255, 200, 80, 0.5) 35%,
+      rgba(255, 200, 80, 0.25) 55%,
+      rgba(255, 200, 80, 0.0) 70%
+    );
+
+    filter: blur(4px);
+  }
+
+  img {
+    position: relative;
+    z-index: 1;
+  }
+}

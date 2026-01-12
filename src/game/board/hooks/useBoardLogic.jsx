@@ -3,6 +3,7 @@ import { useCallback, useMemo } from "react";
 
 import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
 import { useGame } from "../../../engine/gameContext/gameContext";
+import { TILE_TYPE_TO_ACTION_KIND } from "../../gameTemplate/components/actionRegistry";
 
 import { buildTiles, movePlayerBySteps } from "../boardMovement";
 
@@ -97,10 +98,24 @@ export const useBoardLogic = () => {
     [setGameState]
   );
 
-  const startEncounterAction = useCallback(
+  const startTileAction = useCallback(
     ({ playerId, landedTileId, landedTile }) => {
-      const r = Math.random();
-      const kind = r < 0.7 ? "pokemonEncounter" : "event";
+      const tileType = String(landedTile?.type || "");
+
+      let kind = TILE_TYPE_TO_ACTION_KIND[tileType] || null;
+
+      // Per-tile odds for encounter tiles
+      const ENCOUNTER_CHANCE_BY_TILE = Object.freeze({
+        Grass: 0.8,
+        Feature: 0.5,
+      });
+
+      if (tileType === "Grass" || tileType === "Feature") {
+        const encounterChance = ENCOUNTER_CHANCE_BY_TILE[tileType] ?? 0.8;
+        kind = Math.random() < encounterChance ? "pokemonEncounter" : "event";
+      }
+
+      if (!kind) return;
 
       const zoneRaw = landedTile?.zoneId ?? landedTile?.zone ?? null;
       const zoneId =
@@ -108,9 +123,7 @@ export const useBoardLogic = () => {
           ? zoneRaw
           : (zoneRaw && typeof zoneRaw === "object" ? zoneRaw.code : null) || "EE";
 
-      const tileType = String(landedTile?.type || "Grass");
       const locationType = tileType === "Feature" ? "feature" : "grass";
-
       const actionKey = makeActionKey();
 
       setGameState((prev) => ({
@@ -255,19 +268,10 @@ export const useBoardLogic = () => {
         return;
       }
 
-      if (landedTile.type === "Grass" || landedTile.type === "Feature") {
-        startEncounterAction({
-          playerId,
-          landedTileId: finalTileId || landedTile.id,
-          landedTile,
-        });
-        return;
-      }
+      const tileType = String(landedTile?.type || "");
 
-      // If the tile is an encounter tile, we do NOT trigger+consume landing events here,
-      // because PokemonEncounter/useEncounterSelection consumes encounter-specific events.
-      if (landedTile.type === "Grass" || landedTile.type === "Feature") {
-        startEncounterAction({
+      if (tileType === "Grass" || tileType === "Feature" || tileType === "PokeMart") {
+        startTileAction({
           playerId,
           landedTileId: finalTileId || landedTile.id,
           landedTile,
@@ -315,7 +319,7 @@ export const useBoardLogic = () => {
       setAnimating,
       updatePlayerPosition,
       setGameState,
-      startEncounterAction,
+      startTileAction,
       tickEventsEndTurn,
       triggerEventsForLanding,
     ]
