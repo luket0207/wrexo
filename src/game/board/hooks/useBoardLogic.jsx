@@ -1,5 +1,5 @@
 // game/board/hooks/useBoardLogic.jsx
-import { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 
 import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
 import { useGame } from "../../../engine/gameContext/gameContext";
@@ -7,6 +7,9 @@ import { useTurnTransition } from "../../../engine/gameContext/useTurnTransition
 import { TILE_TYPE_TO_ACTION_KIND } from "../../gameTemplate/components/actionRegistry";
 
 import { buildTiles, movePlayerBySteps } from "../boardMovement";
+
+import Button, { BUTTON_VARIANT } from "../../../engine/ui/button/button";
+import { MODAL_BUTTONS, useModal } from "../../../engine/ui/modal/modalContext";
 
 const computeNextTurnIndex = (prevTurnIndex, playerCount) => {
   const count = Math.max(1, Number(playerCount) || 1);
@@ -27,11 +30,30 @@ const makeActionKey = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+const START_ZONE_OPTIONS = Object.freeze([
+  { label: "Horseshoe Coast (HC)", zoneCode: "HC", tileId: "T06" },
+  { label: "Earths End (EE)", zoneCode: "EE", tileId: "T18" },
+  { label: "Frith (F)", zoneCode: "F", tileId: "T30" },
+  { label: "Basham (B)", zoneCode: "B", tileId: "T42" },
+  { label: "Erdig (E)", zoneCode: "E", tileId: "T54" },
+  { label: "Dinasran (D)", zoneCode: "D", tileId: "T66" },
+]);
+
+const tileIdToIndex = (tileId) => {
+  const s = String(tileId || "").trim();
+  const m = /^T(\d{2})$/.exec(s);
+  if (!m) return 0;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.max(0, n - 1);
+};
+
 export const useBoardLogic = () => {
   const { rollDice } = useDiceRoll();
   const { endTurn } = useTurnTransition();
+  const { openModal, closeModal } = useModal();
 
-  const { gameState, setGameState, triggerEventsForLanding } = useGame();
+  const { gameState, setGameState, triggerEventsForLanding, healPlayerParty } = useGame();
 
   const tiles = useMemo(() => buildTiles(72), []);
 
@@ -101,13 +123,158 @@ export const useBoardLogic = () => {
     [setGameState]
   );
 
+  const setPlayerChoosingStart = useCallback(
+    ({ playerId, value }) => {
+      if (!playerId) return;
+
+      setGameState((prev) => ({
+        ...prev,
+        players: (prev.players || []).map((p) => {
+          if (p.id !== playerId) return p;
+          return { ...p, isChoosingStart: !!value };
+        }),
+      }));
+    },
+    [setGameState]
+  );
+
+  const placePlayerWithoutTriggeringTile = useCallback(
+    ({ playerId, tileId }) => {
+      const idx = tileIdToIndex(tileId);
+
+      setGameState((prev) => ({
+        ...prev,
+        pendingMove: null,
+        isAnimating: false,
+        activeAction: null,
+        players: (prev.players || []).map((p) => {
+          if (p.id !== playerId) return p;
+          return {
+            ...p,
+            positionIndex: idx,
+            currentTileId: String(tileId || "T01"),
+            hasChosenStart: true,
+            isChoosingStart: false,
+          };
+        }),
+      }));
+    },
+    [setGameState]
+  );
+
+  const promptChooseStartingZone = useCallback(
+    ({ playerId }) => {
+      if (!playerId) return;
+
+      const player = players.find((p) => p?.id === playerId) || null;
+      const playerName = player?.name ? String(player.name) : "Player";
+
+      // This is the key: mark as choosing in GAME STATE so we never rely on a ref gate.
+      setPlayerChoosingStart({ playerId, value: true });
+
+      const content = (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {START_ZONE_OPTIONS.map((opt) => (
+            <Button
+              key={opt.tileId}
+              variant={BUTTON_VARIANT.PRIMARY}
+              onClick={() => {
+                closeModal();
+                placePlayerWithoutTriggeringTile({ playerId, tileId: opt.tileId });
+              }}
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+      );
+
+      openModal({
+        title: `Choose Starting Zone - ${playerName}`,
+        content,
+        buttons: MODAL_BUTTONS.NONE,
+        locked: true,
+      });
+    },
+    [players, setPlayerChoosingStart, openModal, closeModal, placePlayerWithoutTriggeringTile]
+  );
+
+  // === START-SELECTION (FIXED) ===
+  // Each player will be prompted on their first active turn.
+  // We gate ONLY on per-player game state:
+  // - hasChosenStart: done
+  // - isChoosingStart: modal already active for them
+  useEffect(() => {
+    if (!activePlayer?.id) return;
+
+    // Board must be idle
+    if (activeAction || pendingMove || isAnimating) return;
+
+    // If already done, nothing to do
+    if (activePlayer.hasChosenStart === true) return;
+
+    // If already choosing (modal active), do not reopen
+    if (activePlayer.isChoosingStart === true) return;
+
+    promptChooseStartingZone({ playerId: activePlayer.id });
+  }, [
+    activePlayer?.id,
+    activePlayer?.hasChosenStart,
+    activePlayer?.isChoosingStart,
+    activeAction,
+    pendingMove,
+    isAnimating,
+    promptChooseStartingZone,
+  ]);
+
+  // === FAINTING FLOW ===
+  // On the player's next turn, heal and force them to choose start again.
+  useEffect(() => {
+    if (!activePlayer?.id) return;
+
+    // Board must be idle
+    if (activeAction || pendingMove || isAnimating) return;
+
+    if (activePlayer.isFainted !== true) return;
+
+    const playerId = activePlayer.id;
+
+    // Heal (best-effort)
+    if (typeof healPlayerParty === "function") {
+      healPlayerParty(playerId, { amount: "MAX" });
+    }
+
+    // Reset faint + require new start selection.
+    // Important: set isChoosingStart false first; the start-selection effect above will open the modal
+    // and set isChoosingStart true in a clean, single path.
+    setGameState((prev) => ({
+      ...prev,
+      players: (prev.players || []).map((p) => {
+        if (p.id !== playerId) return p;
+        return {
+          ...p,
+          isFainted: false,
+          hasChosenStart: false,
+          isChoosingStart: false,
+        };
+      }),
+    }));
+  }, [
+    activePlayer?.id,
+    activePlayer?.isFainted,
+    activeAction,
+    pendingMove,
+    isAnimating,
+    healPlayerParty,
+    setGameState,
+  ]);
+
   const startTileAction = useCallback(
     ({ playerId, landedTileId, landedTile }) => {
       const tileType = String(landedTile?.type || "");
 
       let kind = TILE_TYPE_TO_ACTION_KIND[tileType] || null;
 
-      // Per-tile odds for encounter tiles
       const ENCOUNTER_CHANCE_BY_TILE = Object.freeze({
         Grass: 0.8,
         Feature: 0.5,
@@ -261,7 +428,6 @@ export const useBoardLogic = () => {
 
       const landedTile = tiles?.[finalIndex] || null;
 
-      // If we cannot resolve a landing tile, end the turn immediately
       if (!landedTile) {
         endTurn({ endingPlayerId: playerId });
         return;
@@ -269,7 +435,6 @@ export const useBoardLogic = () => {
 
       const tileType = String(landedTile?.type || "");
 
-      // Encounter / action tiles: action resolves later and ends the turn via endActiveAction.
       if (
         tileType === "Grass" ||
         tileType === "Feature" ||
@@ -284,30 +449,15 @@ export const useBoardLogic = () => {
         return;
       }
 
-      // trigger landing events for non-encounter tiles
       if (typeof triggerEventsForLanding === "function") {
-        const zoneCode =
-          (landedTile?.zone && typeof landedTile.zone === "object" ? landedTile.zone.code : null) ||
-          (typeof landedTile?.zone === "string" ? landedTile.zone : null) ||
-          (typeof landedTile?.zoneId === "string" ? landedTile.zoneId : null) ||
-          "EE";
-
-        const res = triggerEventsForLanding({
+        triggerEventsForLanding({
           playerId,
           tileId: finalTileId,
           tileType: landedTile.type,
           zoneId: landedTile.zone?.code || null,
         });
-
-        console.log("[LandingEvents]", {
-          tileId: landedTile.id,
-          type: landedTile.type,
-          zone: zoneCode,
-          res,
-        });
       }
 
-      // Normal end of board turn
       endTurn({ endingPlayerId: playerId });
     },
     [
@@ -341,5 +491,7 @@ export const useBoardLogic = () => {
     onDebugRoll,
     onClockwise,
     onAnticlockwise,
+
+    promptChooseStartingZone,
   };
 };

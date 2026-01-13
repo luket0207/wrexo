@@ -1,4 +1,3 @@
-// engine/gameContext/gameContext.jsx
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import useItems from "./useItems";
 import useEvents from "./useEvent";
@@ -61,11 +60,15 @@ const normalizePlayersToGamePlayers = (playersInput) => {
 
     autoItems: [],
 
-    // Events log
     events: [],
 
     positionIndex: 0,
     currentTileId: "T01",
+
+    // start selection + fainting state
+    hasChosenStart: false,
+    isChoosingStart: false,
+    isFainted: false,
   }));
 };
 
@@ -219,6 +222,167 @@ export const GameProvider = ({ children, initialState = null }) => {
   }, []);
 
   // ============================
+  // Fainting state helpers
+  // ============================
+
+  const setPlayerFainted = useCallback(
+    (playerId, value) => {
+      if (!playerId) throw new Error("setPlayerFainted: playerId is required");
+
+      setGameState((prev) => {
+        const players = Array.isArray(prev?.players) ? prev.players : [];
+        const idx = players.findIndex((p) => p?.id === playerId);
+        if (idx === -1) return prev;
+
+        const player = players[idx];
+        const nextPlayer = { ...player, isFainted: !!value };
+        const nextPlayers = players.slice();
+        nextPlayers[idx] = nextPlayer;
+
+        return { ...prev, players: nextPlayers };
+      });
+    },
+    [setGameState]
+  );
+
+  // ============================
+  // Party healing (versatile)
+  // ============================
+
+  const clampNonNegativeInt = (n) => {
+    const x = Number(n);
+    if (!Number.isFinite(x)) return 0;
+    const i = Math.floor(x);
+    return i < 0 ? 0 : i;
+  };
+
+  const toNumber = (n, fallback = 0) => {
+    const x = Number(n);
+    return Number.isFinite(x) ? x : fallback;
+  };
+
+  const healOnePokemon = (pokemon, { mode, amount }) => {
+    if (!pokemon || typeof pokemon !== "object") return pokemon;
+
+    const curHp = toNumber(pokemon.health, 0);
+    const maxHpRaw = toNumber(pokemon.maxHealth, curHp);
+    const maxHp = maxHpRaw < 0 ? 0 : maxHpRaw;
+
+    if (mode === "MAX") {
+      return {
+        ...pokemon,
+        maxHealth: maxHp,
+        health: maxHp,
+      };
+    }
+
+    const healBy = clampNonNegativeInt(amount);
+    if (healBy <= 0) return pokemon;
+
+    const nextHp = Math.min(maxHp, curHp + healBy);
+    if (nextHp === curHp) return pokemon;
+
+    return {
+      ...pokemon,
+      maxHealth: maxHp,
+      health: nextHp,
+    };
+  };
+
+  const normalizeHealSpec = (spec) => {
+    const s = spec && typeof spec === "object" ? spec : {};
+
+    const rawAmount = s.amount;
+
+    const mode =
+      rawAmount === "MAX" || rawAmount === Infinity || s.mode === "MAX" ? "MAX" : "AMOUNT";
+
+    const amount = mode === "AMOUNT" ? clampNonNegativeInt(rawAmount) : 0;
+
+    const healType = typeof s.healType === "string" ? s.healType.trim() : null;
+
+    const healPokemonIds = Array.isArray(s.healPokemonIds)
+      ? s.healPokemonIds.map((x) => String(x || "").trim()).filter(Boolean)
+      : [];
+
+    return {
+      mode,
+      amount,
+      healType,
+      healPokemonIds,
+    };
+  };
+
+  const pokemonMatchesType = (pokemon, healType) => {
+    if (!healType) return true;
+    const t1 = typeof pokemon?.type === "string" ? pokemon.type : null;
+    const t2 = typeof pokemon?.type2 === "string" ? pokemon.type2 : null;
+    return t1 === healType || t2 === healType;
+  };
+
+  const pokemonMatchesId = (pokemon, idSetOrNull) => {
+    if (!idSetOrNull) return true;
+    const id = typeof pokemon?.id === "string" ? pokemon.id : null;
+    return !!id && idSetOrNull.has(id);
+  };
+
+  const healPlayerParty = useCallback(
+    (playerId, healSpec) => {
+      if (!playerId) throw new Error("healPlayerParty: playerId is required");
+
+      const spec = normalizeHealSpec(healSpec);
+
+      setGameState((prev) => {
+        const players = Array.isArray(prev?.players) ? prev.players : [];
+        const idx = players.findIndex((p) => p?.id === playerId);
+        if (idx === -1) return prev;
+
+        const player = players[idx];
+        const team = Array.isArray(player?.pokemon) ? player.pokemon : [];
+
+        if (team.length === 0) return prev;
+
+        const hasIds = spec.healPokemonIds.length > 0;
+        const idSet = hasIds ? new Set(spec.healPokemonIds) : null;
+
+        const nextTeam = team.map((pk) => {
+          // Targeting precedence:
+          // 1) healPokemonIds
+          // 2) healType
+          // 3) all
+          if (hasIds) {
+            if (!pokemonMatchesId(pk, idSet)) return pk;
+            return healOnePokemon(pk, spec);
+          }
+
+          if (spec.healType) {
+            if (!pokemonMatchesType(pk, spec.healType)) return pk;
+            return healOnePokemon(pk, spec);
+          }
+
+          return healOnePokemon(pk, spec);
+        });
+
+        let changed = false;
+        for (let i = 0; i < team.length; i += 1) {
+          if (nextTeam[i] !== team[i]) {
+            changed = true;
+            break;
+          }
+        }
+        if (!changed) return prev;
+
+        const nextPlayer = { ...player, pokemon: nextTeam };
+        const nextPlayers = players.slice();
+        nextPlayers[idx] = nextPlayer;
+
+        return { ...prev, players: nextPlayers };
+      });
+    },
+    [setGameState]
+  );
+
+  // ============================
   // Items (hook)
   // ============================
 
@@ -250,6 +414,10 @@ export const GameProvider = ({ children, initialState = null }) => {
       addPokemonToTeam,
       removePokemonFromTeam,
 
+      // Fainting + healing
+      setPlayerFainted,
+      healPlayerParty,
+
       addItemToInventory,
       resolvePendingItemDecision,
       clearPendingItemDecision,
@@ -267,6 +435,8 @@ export const GameProvider = ({ children, initialState = null }) => {
       loadGameState,
       addPokemonToTeam,
       removePokemonFromTeam,
+      setPlayerFainted,
+      healPlayerParty,
       addItemToInventory,
       resolvePendingItemDecision,
       clearPendingItemDecision,

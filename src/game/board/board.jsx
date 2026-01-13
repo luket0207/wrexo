@@ -34,6 +34,13 @@ const getTouchingOffset = ({ tileId, playerId, indexInTile }) => {
   return { dx, dy };
 };
 
+const isPieceVisible = (player) => {
+  if (!player) return false;
+  if (player.hasChosenStart !== true) return false;
+  if (player.isChoosingStart === true) return false;
+  return true;
+};
+
 const Board = () => {
   const {
     tiles,
@@ -168,7 +175,8 @@ const Board = () => {
     const placements = [];
 
     tiles.forEach((t) => {
-      const tilePlayers = piecesByTileIndex.get(t.index) || [];
+      const tilePlayersRaw = piecesByTileIndex.get(t.index) || [];
+      const tilePlayers = tilePlayersRaw.filter(isPieceVisible); // NEW
       if (!tilePlayers.length) return;
 
       const pos = layout.positions.get(t.id);
@@ -221,11 +229,12 @@ const Board = () => {
           {/* 1) Tiles layer */}
           <div className="boardTilesLayer">
             {tiles.map((t) => {
-              const tilePlayers = piecesByTileIndex.get(t.index) || [];
               const pos = layout.positions.get(t.id);
 
               const x = Number.isFinite(pos?.x) ? pos.x : layout.center;
               const y = Number.isFinite(pos?.y) ? pos.y : layout.center;
+              const tilePlayersRaw = piecesByTileIndex.get(t.index) || [];
+              const tilePlayers = tilePlayersRaw.filter(isPieceVisible);
 
               return (
                 <div

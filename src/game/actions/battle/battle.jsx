@@ -1,4 +1,3 @@
-// game/actions/battle/battle.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import OrderSelect from "./components/orderSelect";
@@ -9,6 +8,7 @@ import BattleResult from "./components/battleResult";
 
 import { createBattleState, getTurnLabel, prepareStartOfTurn, TURN } from "./battleEngine";
 import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
+import { useGame } from "../../../engine/gameContext/gameContext";
 
 import moves from "../../../assets/gameContent/moves";
 import { createMoveMap } from "./battleMoveMap";
@@ -23,8 +23,42 @@ const BATTLE_PHASE = {
   STARTED: "STARTED",
 };
 
-const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
+const clampNumber = (v, fallback = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const pickPersistedFieldsFromBattlePokemon = (battlePokemon) => {
+  if (!battlePokemon || typeof battlePokemon !== "object") return null;
+
+  return {
+    health: clampNumber(battlePokemon.health, 0),
+    maxHealth: clampNumber(battlePokemon.maxHealth, clampNumber(battlePokemon.health, 0)),
+    fainted: !!battlePokemon.fainted,
+    status: battlePokemon.status ?? undefined,
+  };
+};
+
+const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [] }) => {
   const { rollDice, evenDiceRoll, minMaxDiceRoll } = useDiceRoll();
+  const { setGameState } = useGame();
+
+  // Capture initial teams ONCE so GameContext sync updates don't reset battle flow.
+  const initialPlayerTeamRef = useRef(null);
+  const initialOpponentTeamRef = useRef(null);
+
+  if (!initialPlayerTeamRef.current) {
+    initialPlayerTeamRef.current = Array.isArray(playerTeam) ? playerTeam.map((p) => ({ ...p })) : [];
+  }
+
+  if (!initialOpponentTeamRef.current) {
+    initialOpponentTeamRef.current = Array.isArray(opponentTeam)
+      ? opponentTeam.map((p) => ({ ...p }))
+      : [];
+  }
+
+  const initialPlayerTeam = initialPlayerTeamRef.current;
+  const initialOpponentTeam = initialOpponentTeamRef.current;
 
   // Toggle between "Debug" (manual controls + gated opponent) and "Normal" (player rolls, opponent auto rolls)
   const [debugManualControls, setDebugManualControls] = useState(true);
@@ -45,9 +79,6 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
   useEffect(() => {
     minMaxDiceRollRef.current = minMaxDiceRoll;
   }, [minMaxDiceRoll]);
-
-  const initialPlayerTeam = Array.isArray(playerTeam) ? playerTeam : [];
-  const initialOpponentTeam = Array.isArray(opponentTeam) ? opponentTeam : [];
 
   const [phase, setPhase] = useState(BATTLE_PHASE.ORDER_SELECT);
 
@@ -71,8 +102,6 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
 
   // Provide a "live" getter so controller always sees latest state
   const battleStateRef = useRef(null);
-
-  // Keep the ref in sync *during render* so it is always current for click handlers/effects.
   battleStateRef.current = battleState;
 
   const getBattleState = useCallback(() => battleStateRef.current, []);
@@ -154,7 +183,6 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
   const toggleMode = useCallback(() => {
     setDebugManualControls((prev) => {
       const next = !prev;
-      // When switching back into debug mode, force the user to explicitly continue the opponent.
       if (next) setOpponentAutoRequested(false);
       return next;
     });
@@ -167,7 +195,6 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
     if (battleState.status === "FINISHED") return;
     if (isResolvingTurnRef.current) return;
 
-    // In debug mode, opponent only auto-rolls after user clicks "Continue Auto Roll"
     if (debugManualControls && !opponentAutoRequested) return;
 
     opponentTurnTokenRef.current += 1;
@@ -177,7 +204,6 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
 
     const run = async () => {
       try {
-        // Slight buffer to allow modal stacks to close cleanly
         await new Promise((resolve) => window.setTimeout(resolve, 350));
 
         if (cancelled) return;
@@ -200,6 +226,85 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
     };
   }, [battleState, opponentAutoRequested, runTurn, debugManualControls]);
 
+  // ============================
+  // SYNC PLAYER TEAM BACK TO GAME CONTEXT (by __partyIndex)
+  // ============================
+  const lastSyncedSigRef = useRef("");
+
+  useEffect(() => {
+    if (!playerId) return;
+    if (!battleState?.player?.team || !Array.isArray(battleState.player.team)) return;
+
+    const team = battleState.player.team;
+
+    // signature includes party index + hp/max + fainted
+    const sig = team
+      .map((p) => {
+        const idx = Number.isFinite(Number(p?.__partyIndex)) ? Number(p.__partyIndex) : -1;
+        return `${idx}:${clampNumber(p?.health, -1)}:${clampNumber(p?.maxHealth, -1)}:${p?.fainted ? 1 : 0}`;
+      })
+      .join("|");
+
+    if (sig && lastSyncedSigRef.current === sig) return;
+    lastSyncedSigRef.current = sig;
+
+    setGameState((prev) => {
+      const players = Array.isArray(prev?.players) ? prev.players : [];
+      const pIndex = players.findIndex((pl) => pl?.id === playerId);
+      if (pIndex === -1) return prev;
+
+      const playerObj = players[pIndex];
+      const party = Array.isArray(playerObj?.pokemon) ? playerObj.pokemon : [];
+      if (party.length === 0) return prev;
+
+      // Apply updates using the stable party index marker.
+      let changed = false;
+      const nextParty = party.map((pk, partyIdx) => {
+        const battlePk = team.find((bp) => Number(bp?.__partyIndex) === partyIdx) || null;
+        if (!battlePk) return pk;
+
+        const persisted = pickPersistedFieldsFromBattlePokemon(battlePk);
+        if (!persisted) return pk;
+
+        // Only update if different to avoid pointless churn.
+        const nextHealth = clampNumber(persisted.health, clampNumber(pk?.health, 0));
+        const nextMax = clampNumber(persisted.maxHealth, clampNumber(pk?.maxHealth, nextHealth));
+
+        const prevHealth = clampNumber(pk?.health, 0);
+        const prevMax = clampNumber(pk?.maxHealth, prevHealth);
+
+        const prevFainted = !!pk?.fainted;
+        const nextFainted = !!persisted.fainted;
+
+        const prevStatus = pk?.status;
+        const nextStatus = persisted.status;
+
+        const statusChanged = JSON.stringify(prevStatus || null) !== JSON.stringify(nextStatus || null);
+
+        if (nextHealth !== prevHealth || nextMax !== prevMax || nextFainted !== prevFainted || statusChanged) {
+          changed = true;
+          return {
+            ...pk,
+            health: nextHealth,
+            maxHealth: nextMax,
+            fainted: nextFainted,
+            status: nextStatus,
+          };
+        }
+
+        return pk;
+      });
+
+      if (!changed) return prev;
+
+      const nextPlayers = players.slice();
+      nextPlayers[pIndex] = { ...playerObj, pokemon: nextParty };
+      return { ...prev, players: nextPlayers };
+    });
+  }, [playerId, battleState, setGameState]);
+
+  // ============================
+
   if (initialPlayerTeam.length === 0 || initialOpponentTeam.length === 0) {
     return (
       <div className="battle">
@@ -220,7 +325,6 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
   }
 
   if (phase === BATTLE_PHASE.FIRST_DECISION) {
-    // No routing now; if you want a "cancel" path later, we can wire it to endActiveAction.
     return <FirstDecision onDecided={handleFirstDecided} onCancel={() => {}} />;
   }
 
@@ -239,7 +343,13 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
     <div className="battle">
       <h1>Battle</h1>
 
-      {battleState.status === "FINISHED" ? <BattleResult winner={battleState.winner} /> : null}
+      {battleState.status === "FINISHED" ? (
+        <BattleResult
+          winner={battleState.winner}
+          playerId={playerId}
+          playerTeam={battleState?.player?.team || []}
+        />
+      ) : null}
 
       <div className="battle__turn">
         Turn: <strong>{turnLabel}</strong>
@@ -309,42 +419,6 @@ const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
           </div>
         )}
       </div>
-
-      <div className="battle__selection">
-        Selected move:{" "}
-        {lastSelection ? (
-          <strong>
-            {lastSelection.side === TURN.PLAYER ? "Player" : "Opponent"} selected{" "}
-            {lastSelection.diceRoll ?? "-"} (slot {lastSelection.slot ?? "-"}) -{" "}
-            {lastSelection.moveName ?? "Locked"}
-          </strong>
-        ) : (
-          <span className="battle__muted">None yet</span>
-        )}
-      </div>
-
-      <div className="battle__action">
-        Current action:{" "}
-        {currentAction ? (
-          <strong>
-            {currentAction.side === TURN.PLAYER ? "Player" : "Opponent"} executing{" "}
-            {currentAction.moveName ?? "Locked"}...
-          </strong>
-        ) : (
-          <span className="battle__muted">None</span>
-        )}
-      </div>
-
-      {Array.isArray(battleState.lastTurnMessages) && battleState.lastTurnMessages.length > 0 ? (
-        <div className="battle__log">
-          <div className="battle__logTitle">Turn log</div>
-          <div className="battle__logList">
-            {battleState.lastTurnMessages.map((m, i) => (
-              <div key={`turn-msg-${i}`}>{m}</div>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       <div className="battle__grid">
         <Player playerState={battleState.player} />

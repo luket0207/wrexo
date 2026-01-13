@@ -1,3 +1,4 @@
+// engine/ui/modal/modal.jsx
 import React, { useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import Button, { BUTTON_VARIANT } from "../button/button";
@@ -17,33 +18,51 @@ const Modal = ({
   onYes,
   onNo,
   onClose,
+  locked = false,
 }) => {
-  const footerConfig = useMemo(() => {
-    const safeClose = typeof onClose === "function" ? onClose : () => {};
-
-    const okHandler = typeof onClick === "function" ? onClick : safeClose;
-    const yesHandler = typeof onYes === "function" ? onYes : safeClose;
-    const noHandler = typeof onNo === "function" ? onNo : safeClose;
-
-    return { okHandler, yesHandler, noHandler, safeClose };
-  }, [onClick, onYes, onNo, onClose]);
+  const isLocked = Boolean(locked);
 
   const isAutoCloseEnabled = useMemo(() => {
+    if (isLocked) return false;
     if (autoClose == null) return false;
     const seconds = Number(autoClose);
     return Number.isFinite(seconds) && seconds > 0;
-  }, [autoClose]);
+  }, [autoClose, isLocked]);
 
   const hasTitle = typeof title === "string" ? title.trim().length > 0 : Boolean(title);
+
+  const footerConfig = useMemo(() => {
+    const safeClose = typeof onClose === "function" ? onClose : () => {};
+
+    // Primary action (OK). If none provided, default is just closing.
+    const okHandler = typeof onClick === "function" ? onClick : safeClose;
+
+    const yesHandler = typeof onYes === "function" ? onYes : safeClose;
+    const noHandler = typeof onNo === "function" ? onNo : safeClose;
+
+    // IMPORTANT:
+    // Any close gesture (X, overlay, Escape, autoClose) should behave like "OK action"
+    // AND also close the modal.
+    const closeHandler = () => {
+      // If an explicit onClick exists, treat it as the close action too.
+      if (typeof onClick === "function") {
+        onClick();
+      }
+      // Always invoke onClose to actually close/reset modal state.
+      safeClose();
+    };
+
+    return { okHandler, yesHandler, noHandler, safeClose, closeHandler };
+  }, [onClick, onYes, onNo, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const onKeyDown = (e) => {
-      // Do not allow manual close on autoClose modals
-      if (isAutoCloseEnabled) return;
+      // Do not allow manual close on autoClose modals or when locked
+      if (isAutoCloseEnabled || isLocked) return;
 
-      if (e.key === "Escape") footerConfig.safeClose();
+      if (e.key === "Escape") footerConfig.closeHandler();
     };
 
     document.addEventListener("keydown", onKeyDown);
@@ -65,7 +84,7 @@ const Modal = ({
     const seconds = Number(autoClose);
 
     const timeoutId = window.setTimeout(() => {
-      footerConfig.safeClose();
+      footerConfig.closeHandler();
     }, seconds * 1000);
 
     return () => {
@@ -80,11 +99,11 @@ const Modal = ({
       className="modal-backdrop"
       role="presentation"
       onMouseDown={(e) => {
-        // Do not allow manual close on autoClose modals
-        if (isAutoCloseEnabled) return;
+        // Do not allow manual close on autoClose modals or when locked
+        if (isAutoCloseEnabled || isLocked) return;
 
         // Close when clicking the backdrop only (not the modal itself)
-        if (e.target === e.currentTarget) footerConfig.safeClose();
+        if (e.target === e.currentTarget) footerConfig.closeHandler();
       }}
     >
       <div className="modal" role="dialog" aria-modal="true" aria-label={hasTitle ? title : "Modal"}>
@@ -92,8 +111,13 @@ const Modal = ({
           <div className="modal__header">
             <div className="modal__title">{title}</div>
 
-            {!isAutoCloseEnabled && (
-              <button type="button" className="modal__close" onClick={footerConfig.safeClose} aria-label="Close modal">
+            {!isAutoCloseEnabled && !isLocked && (
+              <button
+                type="button"
+                className="modal__close"
+                onClick={footerConfig.closeHandler}
+                aria-label="Close modal"
+              >
                 <FontAwesomeIcon icon={faXmark} />
               </button>
             )}

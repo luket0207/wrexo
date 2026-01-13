@@ -21,6 +21,7 @@ const Tile = ({ tile, children, isActive = false }) => {
       data-type={tile?.type || ""}
     >
       {children}
+      {tile?.id || ""}
     </div>
   );
 };

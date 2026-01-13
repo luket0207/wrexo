@@ -13,6 +13,17 @@ import Battle from "./battle";
 const getPokemonId = (p) => String(p?.id || p?.ID || "").trim();
 const getPokemonName = (p) => String(p?.name || p?.Name || p?.pokemonName || "Pokemon").trim();
 
+const toNumber = (v, fallback = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const isUsableForBattle = (pokemon) => {
+  // A pokemon with 0 (or less) health stays in party but cannot battle.
+  const hp = toNumber(pokemon?.health, 0);
+  return hp > 0;
+};
+
 const findPokemonById = (dex, id) => {
   const arr = Array.isArray(dex) ? dex : [];
   const target = String(id || "").trim();
@@ -29,7 +40,7 @@ const cloneForBattle = (pokemonObj) => {
 const BattleContainer = () => {
   const { endActiveAction } = useActions();
   const { gameState } = useGame();
-  const { openModal } = useModal();
+  const { openModal, closeModal } = useModal();
 
   const [battleStarted, setBattleStarted] = useState(false);
 
@@ -39,17 +50,24 @@ const BattleContainer = () => {
   // Prevent re-opening the intro modal on re-render for the same actionKey
   const shownForActionKeyRef = useRef(null);
 
+  // Freeze teams for the duration of this battle action so the component
+  // does NOT unmount when the player’s last usable Pokemon hits 0 HP.
+  const frozenPlayerTeamRef = useRef(null);
+  const frozenOpponentTeamRef = useRef(null);
+
   useEffect(() => {
-    // New action => reset local UI state
     setBattleStarted(false);
     shownForActionKeyRef.current = null;
+    frozenPlayerTeamRef.current = null;
+    frozenOpponentTeamRef.current = null;
   }, [actionKey]);
 
+  const playerId = useMemo(() => String(action?.playerId || "").trim() || null, [action?.playerId]);
+
   const player = useMemo(() => {
-    const playerId = action?.playerId || null;
     const players = Array.isArray(gameState?.players) ? gameState.players : [];
     return players.find((p) => p?.id === playerId) || null;
-  }, [gameState?.players, action?.playerId]);
+  }, [gameState?.players, playerId]);
 
   const zoneCode = useMemo(() => {
     const raw = action?.zoneId ?? action?.zone ?? "EE";
@@ -60,6 +78,17 @@ const BattleContainer = () => {
     () => (Array.isArray(player?.pokemon) ? player.pokemon : []),
     [player?.pokemon]
   );
+
+  // Build the battle-eligible team ONCE at battle start.
+  // IMPORTANT: preserve original party indices via __partyIndex so battle sync maps back correctly.
+  const usableTeamForBattle = useMemo(() => {
+    const out = [];
+    (Array.isArray(playerTeam) ? playerTeam : []).forEach((p, partyIndex) => {
+      if (!isUsableForBattle(p)) return;
+      out.push({ ...p, __partyIndex: partyIndex });
+    });
+    return out;
+  }, [playerTeam]);
 
   const playerLevel = useMemo(() => Number(player?.level) || 1, [player?.level]);
 
@@ -90,24 +119,40 @@ const BattleContainer = () => {
   }, [playerLevel, zoneCode]);
 
   const beginBattle = useCallback(() => {
+    // Freeze the teams at the moment battle begins.
+    // This prevents the battle UI from disappearing when the player's last
+    // usable Pokemon hits 0 HP (which would otherwise make usableTeamForBattle=[]).
+    if (!frozenPlayerTeamRef.current) {
+      frozenPlayerTeamRef.current = Array.isArray(usableTeamForBattle)
+        ? usableTeamForBattle.map((p) => ({ ...p }))
+        : [];
+    }
+
+    if (!frozenOpponentTeamRef.current) {
+      frozenOpponentTeamRef.current =
+        opponent?.ok && Array.isArray(opponent.team) ? opponent.team.map((p) => ({ ...p })) : [];
+    }
+
     setBattleStarted(true);
-  }, []);
+  }, [usableTeamForBattle, opponent]);
 
   useEffect(() => {
     if (!actionKey) return;
-
-    // prevent re-opening modal on re-render
     if (shownForActionKeyRef.current === actionKey) return;
 
-    // If we somehow mount without a valid player, safely end the action.
+    // NOTE: This effect is only for initial entry gating.
+    // Once battleStarted, we do NOT want to auto-end or re-open anything.
+    if (battleStarted) return;
+
     if (!player) {
       shownForActionKeyRef.current = actionKey;
       endActiveAction();
       return;
     }
 
-    // No pokemon in party -> block trainer battle and advance turn via endActiveAction.
-    if (playerTeam.length === 0) {
+    // Require at least one usable pokemon (hp > 0) to START a battle.
+    // But do not enforce this after battle has started (battle must remain mounted until user exits).
+    if (usableTeamForBattle.length === 0) {
       shownForActionKeyRef.current = actionKey;
       openModal({
         title: "Trainer Battle",
@@ -118,7 +163,6 @@ const BattleContainer = () => {
       return;
     }
 
-    // We have a party: generate opponent and announce battle.
     if (!opponent?.ok) {
       shownForActionKeyRef.current = actionKey;
       openModal({
@@ -131,22 +175,47 @@ const BattleContainer = () => {
     }
 
     shownForActionKeyRef.current = actionKey;
+
     openModal({
       title: "Trainer Battle",
       content: `A ${opponent.trainer} wants to battle you with their ${opponent.pokemonName}`,
       buttons: MODAL_BUTTONS.OK,
-      onClick: beginBattle,
+      onClick: () => {
+        closeModal();
+        beginBattle();
+      },
     });
-  }, [actionKey, player, playerTeam.length, opponent, openModal, endActiveAction, beginBattle]);
+  }, [
+    actionKey,
+    battleStarted,
+    player,
+    usableTeamForBattle.length,
+    opponent,
+    openModal,
+    closeModal,
+    endActiveAction,
+    beginBattle,
+  ]);
 
-  // Until user clicks OK on the intro modal, render nothing.
+  // If battle hasn't started yet, don't render anything (modal drives entry).
   if (!battleStarted) return null;
 
-  // If something went wrong, fail closed.
-  if (!Array.isArray(playerTeam) || playerTeam.length === 0) return null;
-  if (!opponent?.ok || !Array.isArray(opponent.team) || opponent.team.length === 0) return null;
+  if (!playerId) return null;
 
-  return <Battle playerTeam={playerTeam} opponentTeam={opponent.team} />;
+  // Use frozen teams once battle has started.
+  const frozenPlayerTeam = Array.isArray(frozenPlayerTeamRef.current)
+    ? frozenPlayerTeamRef.current
+    : [];
+  const frozenOpponentTeam = Array.isArray(frozenOpponentTeamRef.current)
+    ? frozenOpponentTeamRef.current
+    : [];
+
+  // IMPORTANT: Do NOT unmount battle if the current live team becomes empty.
+  // The battle must remain mounted until the user clicks "Return to Board".
+  if (frozenPlayerTeam.length === 0) return null;
+  if (frozenOpponentTeam.length === 0) return null;
+
+  return <Battle playerId={playerId} playerTeam={frozenPlayerTeam} opponentTeam={frozenOpponentTeam} />;
 };
 
 export default BattleContainer;

@@ -38,7 +38,14 @@ export const useActions = () => {
     endTurn({
       endingPlayerId,
       nextTurnIndex,
+
+      // IMPORTANT: action ending should fully clear the action
       clearActiveAction: true,
+
+      // IMPORTANT: prevent the generic "Turn Start" modal from colliding with
+      // the board's "Choose Starting Zone" modal (and any fainting modal flow).
+      // The board will handle prompting the next player appropriately.
+      suppressAnnouncement: true,
     });
   }, [gameState, endTurn]);
 
