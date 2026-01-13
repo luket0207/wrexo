@@ -65,18 +65,11 @@ const GameLayout = ({ onNewGame }) => {
     return actionBgStyle || undefined;
   }, [view, boardBgStyle, actionBgStyle]);
 
-  const rootStyle = useMemo(() => {
-    if (view === "board") {
-      return { marginRight: "300px" };
-    }
-    return undefined;
-  }, [view]);
-
   return (
-    <div className="gameTemplateRoot" style={rootStyle}>
+    <div className="gameTemplateRoot">
       {!hideUi ? <GameUi onNewGame={onNewGame} /> : null}
 
-      <main className="gameTemplateContent" style={containerStyle}>
+      <main className={`gameTemplateContent ${view === "board" ? "is-board" : ""}`} style={containerStyle}>
         <GameScene />
       </main>
     </div>

@@ -1,5 +1,30 @@
 // components/piece.jsx
 import React, { useMemo } from "react";
+import "./piece.scss";
+
+import pieceBlue from "../../../assets/images/board/pieces/piece-blue.png";
+import pieceGreen from "../../../assets/images/board/pieces/piece-green.png";
+import pieceRed from "../../../assets/images/board/pieces/piece-red.png";
+import pieceYellow from "../../../assets/images/board/pieces/piece-yellow.png";
+
+const PIECE_IMAGE_BY_COLOR = Object.freeze({
+  blue: pieceBlue,
+  green: pieceGreen,
+  red: pieceRed,
+  yellow: pieceYellow,
+});
+
+const normalizeColorKey = (color) => {
+  const c = String(color || "").trim().toLowerCase();
+
+  // Common aliases / hex support (optional but useful)
+  if (c === "#ff0000") return "red";
+  if (c === "#00ff00") return "green";
+  if (c === "#0000ff") return "blue";
+  if (c === "#ffff00") return "yellow";
+
+  return c;
+};
 
 const Piece = ({ player, isActive = false }) => {
   const initials = useMemo(() => {
@@ -11,16 +36,18 @@ const Piece = ({ player, isActive = false }) => {
     return (first + second).toUpperCase();
   }, [player?.name]);
 
+  const imgSrc = useMemo(() => {
+    const key = normalizeColorKey(player?.color);
+    return PIECE_IMAGE_BY_COLOR[key] || PIECE_IMAGE_BY_COLOR.red;
+  }, [player?.color]);
+
   return (
     <div
       className={`piece ${isActive ? "is-active" : ""}`}
       title={player?.name}
       aria-label={`${player?.name} piece`}
-      style={{
-        backgroundColor: player?.color || "gray",
-      }}
     >
-      <span className="pieceLabel">{initials}</span>
+      <img className="pieceImg" src={imgSrc} alt="" draggable="false" />
     </div>
   );
 };

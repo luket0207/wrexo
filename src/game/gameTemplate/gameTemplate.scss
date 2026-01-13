@@ -67,4 +67,15 @@
 .gameTemplateContent {
   height: 900px;
   width: 900px;
+
+  &.is-board {
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: #00000070;
+    }
+  }
 }

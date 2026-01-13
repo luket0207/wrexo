@@ -1,0 +1,111 @@
+// game/board/components/boardControls.jsx
+import React, { useMemo, useState, useCallback } from "react";
+
+const BoardControls = ({
+  players,
+  activePlayerId,
+  isAnimating,
+  onRoll,
+  onDebugRoll,
+  pendingMove,
+  onClockwise,
+  onAnticlockwise,
+}) => {
+  const [isDebugMode, setIsDebugMode] = useState(false);
+
+  const active = useMemo(
+    () => players.find((p) => p.id === activePlayerId) || null,
+    [players, activePlayerId]
+  );
+
+  const pendingForActive = useMemo(() => {
+    if (!pendingMove || !active) return null;
+    return pendingMove.playerId === active.id ? pendingMove : null;
+  }, [pendingMove, active]);
+
+  const canRollNow = !isAnimating && !pendingMove;
+  const isChoosingDirection = !!pendingForActive;
+
+  const onToggleDebug = useCallback(() => {
+    setIsDebugMode((prev) => !prev);
+  }, []);
+
+  const headerBg = useMemo(() => {
+    // Use player's colour; provide a safe fallback
+    return active?.color || "#334155";
+  }, [active?.color]);
+
+  return (
+    <aside className="boardControls" aria-label="Board controls">
+      <div className="boardControls__turnHeader" style={{ backgroundColor: headerBg }}>
+        <div className="boardControls__turnHeaderLabel">Turn</div>
+        <div className="boardControls__turnHeaderName">{active?.name || "No active player"}</div>
+      </div>
+
+      <div className="boardControls__body">
+        {!isChoosingDirection ? (
+          <>
+            {!isDebugMode ? (
+              <button
+                className="boardControls__primaryBtn"
+                type="button"
+                onClick={onRoll}
+                disabled={!canRollNow}
+              >
+                {isAnimating ? "Moving..." : "Roll Dice"}
+              </button>
+            ) : (
+              <div className="boardControls__debugGrid" role="group" aria-label="Debug roll value">
+                {[1, 2, 3, 4, 5, 6].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    className="boardControls__debugBtn"
+                    disabled={!canRollNow}
+                    onClick={() => {
+                      if (!canRollNow) return;
+                      if (typeof onDebugRoll !== "function") return;
+                      onDebugRoll(v);
+                    }}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <button
+              className="boardControls__secondaryBtn"
+              type="button"
+              onClick={onToggleDebug}
+              disabled={isAnimating}
+            >
+              {isDebugMode ? "Debug: ON" : "Debug: OFF"}
+            </button>
+          </>
+        ) : (
+          <div className="boardControls__direction">
+            <button
+              className="boardControls__primaryBtn"
+              type="button"
+              onClick={onClockwise}
+              disabled={isAnimating}
+            >
+              Clockwise
+            </button>
+            <button
+              className="boardControls__primaryBtn"
+              type="button"
+              onClick={onAnticlockwise}
+              disabled={isAnimating}
+            >
+              Anti-clockwise
+            </button>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+};
+
+export default BoardControls;

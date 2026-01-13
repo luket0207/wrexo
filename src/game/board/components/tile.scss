@@ -3,13 +3,15 @@
 .tile {
   position: relative;
   z-index: 1;
-  width: 25px;
-  height: 25px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
   box-sizing: border-box;
   transition: all 0.3s ease;
 
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border: 3px solid rgba(255, 255, 255, 0.2);  
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.80);
 
   /* default background if type missing */
   background: #111827;
@@ -21,8 +23,8 @@
 /* Optional: subtle active state */
 .tile.is-active {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
-  width: 35px;
-  height: 35px;
+  width: 40px;
+  height: 40px;
 }
 
 /* ---------- Type background colors ---------- */
@@ -74,12 +76,10 @@
 
 /* E: blue-green gradient */
 .tile--zone-e {
-  border-color: transparent;
-  border-image: linear-gradient(135deg, #1d4ed8, #10b981) 1;
+  border-color:  #10b981;
 }
 
 /* D: mainly brown with a bit of green gradient */
 .tile--zone-d {
-  border-color: transparent;
-  border-image: linear-gradient(135deg, #8b5e34, #2f6f3e) 1;
+  border-color: #8b5e34
 }

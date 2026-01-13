@@ -4,7 +4,7 @@ import "./board.scss";
 
 import Tile from "./components/tile";
 import Piece from "./components/piece";
-import BoardSidebar from "./components/boardSidebar";
+import BoardControls from "./components/boardControls";
 
 import { useBoardLogic } from "./hooks/useBoardLogic";
 
@@ -60,15 +60,15 @@ const Board = () => {
     const tileCount = Array.isArray(tiles) ? tiles.length : 0;
     const degToRad = (deg) => (Number(deg) || 0) * (Math.PI / 180);
     const TAU = Math.PI * 2;
-    const WOBBLE_SEED = 9; // change this to get a totally different path
+    const WOBBLE_SEED = 9; // change this to get a totally different path BEST: 9
     const size = 900;
     const center = size / 2;
     // Base settings
     const baseRadius = 380;
     // Target spacing between tiles in pixels
-    const stepPx = 5;
+    const stepPx = 15;
     // Wobble amplitude in pixels
-    const wobbleAmplitude = 120;
+    const wobbleAmplitude = 100;
     // Start angle (degrees -> radians)
     const startAngle = degToRad(190);
 
@@ -160,7 +160,7 @@ const Board = () => {
       const radius = radii[i];
 
       const x = center + radius * Math.cos(theta);
-      const y = center + radius * Math.sin(theta);
+      const y = center + (radius + 30) * Math.sin(theta);
 
       positions.set(t.id, { x, y });
 
@@ -207,7 +207,7 @@ const Board = () => {
 
   return (
     <div className="boardRoot">
-      <BoardSidebar
+      <BoardControls
         players={players}
         activePlayerId={activePlayer?.id || null}
         isAnimating={isAnimating}

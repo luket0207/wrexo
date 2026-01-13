@@ -4,8 +4,6 @@
   width: 100%;
   box-sizing: border-box;
   position: relative;
-  display: grid;
-  grid-template-columns: 900px 300px;
 }
 
 .boardWrap {
@@ -13,7 +11,7 @@
   overflow: auto;
   box-sizing: border-box;
   position: absolute;
-  top: -20px;
+  top: 0px;
   left: -25px;
 }
 
@@ -43,175 +41,98 @@
   z-index: 1;
 }
 
-/* Each piece positioned in the overlay */
-.boardPiecePos {
-  position: absolute;
-  z-index: 1000;
-  pointer-events: none;
-}
-
-/* Piece styling can live here */
-.piece {
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  display: grid;
-  place-items: center;
-  box-sizing: border-box;
-}
-
-.piece.is-active {
-  transform: scale(1.08);
-  border-color: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-}
-
-.pieceLabel {
-  font-size: 10px;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.92);
-  font-weight: 700;
-  user-select: none;
-}
-
-.tilePiecesAbs {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.tilePiecePos {
-  position: absolute;
-  pointer-events: none;
-}
-
-/* Sidebar remains in board.scss (board-level UI) */
-.boardSidebar {
-  background: #0b1220;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 14px;
-  box-sizing: border-box;
-  color: rgba(255, 255, 255, 0.92);
-  grid-column: 2;
+/* Controls */
+.boardControls {
   width: 300px;
-  height: 900px;
+  box-sizing: border-box;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0b1220;
+  color: rgba(255, 255, 255, 0.92);
+  position: absolute;
+  top: 450px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
 }
 
-.boardSidebar__header {
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 12px;
+.boardControls__turnHeader {
+  padding: 12px 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.boardSidebar__title {
+.boardControls__turnHeaderLabel {
   font-size: 12px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.85);
 }
 
-.boardSidebar__subtitle {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
+.boardControls__turnHeaderName {
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.boardControls__body {
+  padding: 12px 14px 14px;
+  display: grid;
   gap: 10px;
 }
 
-.boardSidebar__activeName {
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.boardSidebar__rollBtn {
+.boardControls__primaryBtn,
+.boardControls__secondaryBtn,
+.boardControls__debugBtn {
   width: 100%;
   border: none;
   border-radius: 12px;
   padding: 10px 12px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   background: #1f2937;
   color: rgba(255, 255, 255, 0.92);
-  transition:
-    transform 120ms ease,
-    opacity 120ms ease,
-    background 120ms ease;
+  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
 }
 
-.boardSidebar__rollBtn:hover {
+.boardControls__secondaryBtn {
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+}
+
+.boardControls__primaryBtn:hover,
+.boardControls__secondaryBtn:hover,
+.boardControls__debugBtn:hover {
   background: #273449;
 }
 
-.boardSidebar__rollBtn:disabled {
+.boardControls__primaryBtn:disabled,
+.boardControls__secondaryBtn:disabled,
+.boardControls__debugBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.boardSidebar__rollBtn:active:not(:disabled) {
+.boardControls__primaryBtn:active:not(:disabled),
+.boardControls__secondaryBtn:active:not(:disabled),
+.boardControls__debugBtn:active:not(:disabled) {
   transform: scale(0.99);
 }
 
-.boardSidebar__section {
-  margin-top: 14px;
-}
-
-.boardSidebar__sectionTitle {
-  font-size: 12px;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.68);
-  margin-bottom: 10px;
-}
-
-.boardSidebar__players {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.boardSidebar__playerRow {
+.boardControls__debugGrid {
   display: grid;
-  grid-template-columns: 14px 1fr;
-  gap: 10px;
-  align-items: center;
-  padding: 8px 8px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
-.boardSidebar__playerRow.is-active {
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+.boardControls__debugBtn {
+  padding: 10px 0;
 }
 
-.boardSidebar__playerMeta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.boardSidebar__playerName {
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.boardSidebar__playerTile {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.74);
-}
-
-.boardSidebar__colorSwatch {
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-sizing: border-box;
-}
-
-.boardSidebar__lastRoll {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.78);
+.boardControls__direction {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
