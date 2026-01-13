@@ -5,8 +5,8 @@ import { randomInt } from "../../../../engine/utils/rng/rng";
 const ZONE_TYPE_POOLS = Object.freeze({
   HC: ["Water", "Fire", "Lightning"],
   EE: ["Grass", "Lightning", "Colourless"],
-  F: ["Grass", "Psychic", "Colourless"],
-  B: ["Fire", "Fighting", "Water"],
+  F: ["Grass", "Psychic", "Water"],
+  B: ["Fire", "Fighting", "Colourless"],
   E: ["Grass", "Water", "Fighting"],
   D: ["Psychic", "Fighting", "Colourless"],
 });

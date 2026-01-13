@@ -126,7 +126,9 @@ export const useBoardLogic = () => {
           ? zoneRaw
           : (zoneRaw && typeof zoneRaw === "object" ? zoneRaw.code : null) || "EE";
 
-      const locationType = tileType === "Feature" ? "feature" : "grass";
+      const locationType =
+        tileType === "Feature" ? "feature" : tileType === "Trainer" ? "trainer" : "grass";
+
       const actionKey = makeActionKey();
 
       setGameState((prev) => ({
@@ -268,7 +270,12 @@ export const useBoardLogic = () => {
       const tileType = String(landedTile?.type || "");
 
       // Encounter / action tiles: action resolves later and ends the turn via endActiveAction.
-      if (tileType === "Grass" || tileType === "Feature" || tileType === "PokeMart") {
+      if (
+        tileType === "Grass" ||
+        tileType === "Feature" ||
+        tileType === "PokeMart" ||
+        tileType === "Trainer"
+      ) {
         startTileAction({
           playerId,
           landedTileId: finalTileId || landedTile.id,

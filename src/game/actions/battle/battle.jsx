@@ -1,11 +1,11 @@
-// Battle.jsx
+// game/actions/battle/battle.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 
 import OrderSelect from "./components/orderSelect";
 import FirstDecision from "./components/firstDecision";
 import Player from "./components/player";
 import Opponent from "./components/opponent";
+import BattleResult from "./components/battleResult";
 
 import { createBattleState, getTurnLabel, prepareStartOfTurn, TURN } from "./battleEngine";
 import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
@@ -23,10 +23,7 @@ const BATTLE_PHASE = {
   STARTED: "STARTED",
 };
 
-const Battle = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-
+const Battle = ({ playerTeam = [], opponentTeam = [] }) => {
   const { rollDice, evenDiceRoll, minMaxDiceRoll } = useDiceRoll();
 
   // Toggle between "Debug" (manual controls + gated opponent) and "Normal" (player rolls, opponent auto rolls)
@@ -49,8 +46,8 @@ const Battle = () => {
     minMaxDiceRollRef.current = minMaxDiceRoll;
   }, [minMaxDiceRoll]);
 
-  const initialPlayerTeam = location.state?.playerTeam ?? [];
-  const initialOpponentTeam = location.state?.opponentTeam ?? [];
+  const initialPlayerTeam = Array.isArray(playerTeam) ? playerTeam : [];
+  const initialOpponentTeam = Array.isArray(opponentTeam) ? opponentTeam : [];
 
   const [phase, setPhase] = useState(BATTLE_PHASE.ORDER_SELECT);
 
@@ -208,9 +205,6 @@ const Battle = () => {
       <div className="battle">
         <h1>Battle</h1>
         <p>No battle setup found.</p>
-        <button type="button" onClick={() => navigate(-1)}>
-          Go Back
-        </button>
       </div>
     );
   }
@@ -226,7 +220,8 @@ const Battle = () => {
   }
 
   if (phase === BATTLE_PHASE.FIRST_DECISION) {
-    return <FirstDecision onDecided={handleFirstDecided} onCancel={() => navigate(-1)} />;
+    // No routing now; if you want a "cancel" path later, we can wire it to endActiveAction.
+    return <FirstDecision onDecided={handleFirstDecided} onCancel={() => {}} />;
   }
 
   if (!battleState || !firstTurn) {
@@ -234,9 +229,6 @@ const Battle = () => {
       <div className="battle">
         <h1>Battle</h1>
         <p>Battle state not ready.</p>
-        <button type="button" onClick={() => navigate(-1)}>
-          Go Back
-        </button>
       </div>
     );
   }
@@ -247,13 +239,7 @@ const Battle = () => {
     <div className="battle">
       <h1>Battle</h1>
 
-      {battleState.status === "FINISHED" ? (
-        <div className="battle__banner">
-          <strong>
-            Battle Over! Winner: {battleState.winner === TURN.PLAYER ? "Player" : "Opponent"}
-          </strong>
-        </div>
-      ) : null}
+      {battleState.status === "FINISHED" ? <BattleResult winner={battleState.winner} /> : null}
 
       <div className="battle__turn">
         Turn: <strong>{turnLabel}</strong>
