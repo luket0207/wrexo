@@ -33,7 +33,7 @@ export const useActions = () => {
     const nextTurnIndex =
       typeof action?.afterTurnIndex === "number" ? action.afterTurnIndex : fallbackNextTurnIndex;
 
-    console.log("[useActions.endActiveAction] activeAction", action);
+    // debug log removed
 
     endTurn({
       endingPlayerId,
