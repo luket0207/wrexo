@@ -5,11 +5,10 @@ const TILE_KEY = Object.freeze([
   { label: "Pokemon Centre", color: "#B3363A" }, // strong muted red
   { label: "Pokemart", color: "#2B4FA3" }, // solid blue
   { label: "Grass", color: "#2F7D4C" }, // natural green
-  { label: "Feature", color: "#6A4FC9" }, // royal purple
+  { label: "Feature", color: "#f5d7a0" }, 
   { label: "NPC", color: "#4FA3C7" }, // lighter blue-cyan
-  { label: "Trainer", color: "#C48A1B" }, // warm gold
+  { label: "Trainer", color: "#bd7440" }, 
 ]);
-
 
 const BoardControls = ({
   players,
