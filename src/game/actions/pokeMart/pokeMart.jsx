@@ -122,6 +122,11 @@ const PokeMartAction = () => {
     return players.find((p) => p?.id === playerId) || null;
   }, [gameState?.players, playerId]);
 
+  const pokemonCount = useMemo(() => {
+    const arr = Array.isArray(player?.pokemon) ? player.pokemon : [];
+    return arr.length;
+  }, [player?.pokemon]);
+
   const hasItemFinder = useMemo(() => {
     const inv = Array.isArray(player?.items) ? player.items : [];
     return inv.some((it) => it?.id === ITEM_FINDER_ID);
@@ -354,13 +359,21 @@ const PokeMartAction = () => {
 
       <div className="pokeMartFooter">
         {phase === PHASE.REVEAL ? (
-          <button
-            type="button"
-            onClick={onContinueToShuffle}
-            disabled={!displayItems?.some(Boolean)}
-          >
-            Continue
-          </button>
+          <>
+            {pokemonCount >= 3 ? (
+              <button type="button" onClick={endActiveAction} className="secondary">
+                Climb Mount Wrexo
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={onContinueToShuffle}
+              disabled={!displayItems?.some(Boolean)}
+            >
+              Continue
+            </button>
+          </>
         ) : null}
 
         {phase === PHASE.FINDER_REVEAL_ONE ? (

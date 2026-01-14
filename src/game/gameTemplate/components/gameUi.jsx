@@ -5,6 +5,7 @@ import "./gameUi.scss";
 import { useGame } from "../../../engine/gameContext/gameContext";
 
 import itemsCatalog from "../../../assets/gameContent/items.jsx";
+import pokemonCatalog from "../../../assets/gameContent/pokemon.jsx";
 import TILES, { TILE_TYPES, ZONES } from "../../../assets/gameContent/tiles.jsx";
 
 import PlayerCard from "./gameUi/components/playerCard";
@@ -21,6 +22,7 @@ const GameUi = ({ onNewGame }) => {
     addItemToInventory,
     resolvePendingItemDecision,
     clearPendingItemDecision,
+    addPokemonToTeam,
 
     addEventToPlayer,
     addGlobalEventToAllPlayers,
@@ -143,6 +145,23 @@ const GameUi = ({ onNewGame }) => {
 
         <button className="gameUiBtn" type="button" onClick={onNewGame}>
           New Game
+        </button>
+        <button
+          className="gameUiBtn"
+          type="button"
+          onClick={() => {
+            const pool = Array.isArray(pokemonCatalog) ? pokemonCatalog : [];
+            if (!pool.length || !activePlayerId) return;
+            const idx = Math.floor(Math.random() * pool.length);
+            const specimen = { ...pool[idx] };
+            try {
+              addPokemonToTeam(activePlayerId, specimen);
+            } catch (e) {
+              // ignore
+            }
+          }}
+        >
+          Give random Pokémon
         </button>
       </div>
 
