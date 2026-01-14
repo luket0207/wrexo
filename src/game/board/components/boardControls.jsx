@@ -5,9 +5,9 @@ const TILE_KEY = Object.freeze([
   { label: "Pokemon Centre", color: "#B3363A" }, // strong muted red
   { label: "Pokemart", color: "#2B4FA3" }, // solid blue
   { label: "Grass", color: "#2F7D4C" }, // natural green
-  { label: "Feature", color: "#f5d7a0" }, 
+  { label: "Feature", color: "#f5d7a0" },
   { label: "NPC", color: "#4FA3C7" }, // lighter blue-cyan
-  { label: "Trainer", color: "#bd7440" }, 
+  { label: "Trainer", color: "#bd7440" },
 ]);
 
 const BoardControls = ({
@@ -19,6 +19,8 @@ const BoardControls = ({
   pendingMove,
   onClockwise,
   onAnticlockwise,
+  isWrexoView,
+  onExitMountWrexoDebug,
 }) => {
   const [isDebugMode, setIsDebugMode] = useState(false);
 
@@ -111,7 +113,11 @@ const BoardControls = ({
             </button>
           </div>
         )}
-
+        {isWrexoView ? (
+          <button type="button" onClick={onExitMountWrexoDebug} className="secondary">
+            Debug: Return from Mount Wrexo
+          </button>
+        ) : null}
         {/* Tile Key */}
         <div className="boardControls__tileKey" aria-label="Tile key">
           <div className="boardControls__tileKeyTitle">Tile Key</div>

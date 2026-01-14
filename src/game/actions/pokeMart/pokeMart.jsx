@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useActions } from "../../../engine/gameContext/useActions";
 import { useGame } from "../../../engine/gameContext/gameContext";
 import { randomInt } from "../../../engine/utils/rng/rng";
+import { useTurnTransition } from "../../../engine/gameContext/useTurnTransition";
 
 import itemsDex from "../../../assets/gameContent/items.jsx";
 
@@ -160,6 +161,39 @@ const PokeMartAction = () => {
     }
   }, [actionKey, items]);
 
+  const { endTurn } = useTurnTransition();
+
+  const enterMountWrexo = useCallback(() => {
+    if (!playerId) return;
+
+    const martIndices = [4, 22]; // MW05, MW23
+    const pick = martIndices[randomInt(0, martIndices.length - 1)];
+    const tileNum = pick + 1;
+    const tileId = `MW${String(tileNum).padStart(2, "0")}`;
+
+    setGameState((prev) => ({
+      ...prev,
+      players: (prev.players || []).map((p) => {
+        if (p.id !== playerId) return p;
+        return {
+          ...p,
+          climbingMountWrexo: true,
+          positionIndexWrexo: pick,
+          currentTileIdWrexo: tileId,
+        };
+      }),
+    }));
+
+    // Roll again (same player continues), return to board
+    const currentIdx = Number(gameState?.turnIndex) || 0;
+    endTurn({
+      endingPlayerId: playerId,
+      nextTurnIndex: currentIdx,
+      clearActiveAction: true,
+      suppressAnnouncement: true,
+    });
+  }, [playerId, setGameState, endTurn, gameState?.turnIndex]);
+
   const consumeOneItemFinder = useCallback(() => {
     if (!playerId) return;
 
@@ -252,14 +286,7 @@ const PokeMartAction = () => {
         grantItemAndFinish(safeIdx);
       }
     },
-    [
-      phase,
-      hasItemFinder,
-      displayItems,
-      revealedIndex,
-      grantItemAndFinish,
-      consumeOneItemFinder,
-    ]
+    [phase, hasItemFinder, displayItems, revealedIndex, grantItemAndFinish, consumeOneItemFinder]
   );
 
   const onKeepRevealed = useCallback(() => {
@@ -320,7 +347,9 @@ const PokeMartAction = () => {
         {phase === PHASE.REVEAL ? "Three items are on offer..." : null}
         {phase === PHASE.SHUFFLE ? "Shuffling..." : null}
         {phase === PHASE.CHOOSE ? "Pick one." : null}
-        {phase === PHASE.FINDER_REVEAL_ONE ? "Item Finder: one card revealed. Keep it or switch?" : null}
+        {phase === PHASE.FINDER_REVEAL_ONE
+          ? "Item Finder: one card revealed. Keep it or switch?"
+          : null}
         {phase === PHASE.FINDER_SWITCH ? "Pick one of the remaining two face-down cards." : null}
         {phase === PHASE.RESULT ? "Here is what you could have won." : null}
       </p>
@@ -333,16 +362,13 @@ const PokeMartAction = () => {
           const faceDown = cardFaceDownForIndex(i);
 
           const clickable =
-            (phase === PHASE.CHOOSE) ||
-            (phase === PHASE.FINDER_SWITCH && i !== revealedIndex);
+            phase === PHASE.CHOOSE || (phase === PHASE.FINDER_SWITCH && i !== revealedIndex);
 
           return (
             <div
               key={it?.id ? `${it.id}-${i}` : `slot-${i}`}
               className={
-                "pokeMartCardSlot" +
-                (isChosen ? " chosen" : "") +
-                (isNotChosen ? " notChosen" : "")
+                "pokeMartCardSlot" + (isChosen ? " chosen" : "") + (isNotChosen ? " notChosen" : "")
               }
             >
               <ItemCard
@@ -361,7 +387,7 @@ const PokeMartAction = () => {
         {phase === PHASE.REVEAL ? (
           <>
             {pokemonCount >= 3 ? (
-              <button type="button" onClick={endActiveAction} className="secondary">
+              <button type="button" onClick={enterMountWrexo} className="secondary">
                 Climb Mount Wrexo
               </button>
             ) : null}

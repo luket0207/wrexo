@@ -62,8 +62,19 @@ const normalizePlayersToGamePlayers = (playersInput) => {
 
     events: [],
 
+    // Main board position
     positionIndex: 0,
     currentTileId: "T01",
+
+    // split positions
+    positionIndexMain: 0,
+    currentTileIdMain: "T01",
+
+    positionIndexWrexo: 0,
+    currentTileIdWrexo: "MW01",
+
+    // mount state
+    climbingMountWrexo: false,
 
     // start selection + fainting state
     hasChosenStart: false,

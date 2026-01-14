@@ -11,6 +11,8 @@ import { buildTiles, movePlayerBySteps } from "../boardMovement";
 import Button, { BUTTON_VARIANT } from "../../../engine/ui/button/button";
 import { MODAL_BUTTONS, useModal } from "../../../engine/ui/modal/modalContext";
 
+import MOUNT_WREXO_TILES from "../../../assets/gameContent/tilesMountWrexo.jsx";
+
 const computeNextTurnIndex = (prevTurnIndex, playerCount) => {
   const count = Math.max(1, Number(playerCount) || 1);
   const idx = Number(prevTurnIndex) || 0;
@@ -55,7 +57,11 @@ export const useBoardLogic = () => {
 
   const { gameState, setGameState, triggerEventsForLanding, healPlayerParty } = useGame();
 
-  const tiles = useMemo(() => buildTiles(72), []);
+  const mainTiles = useMemo(() => buildTiles(72), []);
+  const wrexoTiles = useMemo(() => {
+    // Ensure indices are correct; file already sets 0..35.
+    return Array.isArray(MOUNT_WREXO_TILES) ? MOUNT_WREXO_TILES : buildTiles(36);
+  }, []);
 
   const players = useMemo(
     () => (Array.isArray(gameState?.players) ? gameState.players : []),
@@ -75,16 +81,72 @@ export const useBoardLogic = () => {
 
   const activePlayer = useMemo(() => players[safeTurnIndex] || null, [players, safeTurnIndex]);
 
+  const isWrexoView = activePlayer?.climbingMountWrexo === true;
+
+  const tiles = useMemo(
+    () => (isWrexoView ? wrexoTiles : mainTiles),
+    [isWrexoView, wrexoTiles, mainTiles]
+  );
+
+  const getPlayerPosIndexForView = useCallback(
+    (p) => {
+      if (!p) return 0;
+      if (isWrexoView) return Number(p.positionIndexWrexo) || 0;
+      // main view
+      return Number(p.positionIndexMain ?? p.positionIndex) || 0;
+    },
+    [isWrexoView]
+  );
+
+  const setPlayerPositionForView = useCallback(
+    ({ playerId, nextIndex, nextTileId }) => {
+      setGameState((prev) => ({
+        ...prev,
+        players: (prev.players || []).map((p) => {
+          if (p.id !== playerId) return p;
+
+          if (isWrexoView) {
+            return {
+              ...p,
+              positionIndexWrexo: nextIndex,
+              currentTileIdWrexo: nextTileId,
+            };
+          }
+
+          // main board (also update legacy fields for compatibility)
+          return {
+            ...p,
+            positionIndex: nextIndex,
+            currentTileId: nextTileId,
+            positionIndexMain: nextIndex,
+            currentTileIdMain: nextTileId,
+          };
+        }),
+      }));
+    },
+    [setGameState, isWrexoView]
+  );
+
   const piecesByTileIndex = useMemo(() => {
     const map = new Map();
+
     players.forEach((p) => {
-      const pos = Number(p.positionIndex) || 0;
+      const onThisBoard = isWrexoView
+        ? p.climbingMountWrexo === true
+        : p.climbingMountWrexo !== true;
+      if (!onThisBoard) return;
+
+      const pos = isWrexoView
+        ? Number(p.positionIndexWrexo) || 0
+        : Number(p.positionIndexMain ?? p.positionIndex) || 0;
+
       const arr = map.get(pos) || [];
       arr.push(p);
       map.set(pos, arr);
     });
+
     return map;
-  }, [players]);
+  }, [players, isWrexoView]);
 
   const canRoll = useMemo(
     () => !isAnimating && !pendingMove && !activeAction,
@@ -140,7 +202,8 @@ export const useBoardLogic = () => {
 
   const placePlayerWithoutTriggeringTile = useCallback(
     ({ playerId, tileId }) => {
-      const idx = tileIdToIndex(tileId);
+      const safeTileId = String(tileId || "T01");
+      const idx = tileIdToIndex(safeTileId);
 
       setGameState((prev) => ({
         ...prev,
@@ -149,12 +212,24 @@ export const useBoardLogic = () => {
         activeAction: null,
         players: (prev.players || []).map((p) => {
           if (p.id !== playerId) return p;
+
           return {
             ...p,
+
+            // Legacy fields (keep for compatibility)
             positionIndex: idx,
-            currentTileId: String(tileId || "T01"),
+            currentTileId: safeTileId,
+
+            // NEW: main-board fields (what the board likely uses now)
+            positionIndexMain: idx,
+            currentTileIdMain: safeTileId,
+
             hasChosenStart: true,
             isChoosingStart: false,
+
+            // Optional safety: if this is a "choose starting zone" flow,
+            // you probably want to ensure they're on the main board.
+            climbingMountWrexo: false,
           };
         }),
       }));
@@ -283,8 +358,14 @@ export const useBoardLogic = () => {
       ...prev,
       players: (prev.players || []).map((p) => {
         if (p.id !== playerId) return p;
+
         return {
           ...p,
+
+          // NEW: if they faint, they are no longer on Mount Wrexo
+          climbingMountWrexo: false,
+
+          // existing faint/reset behaviour
           isFainted: false,
           hasChosenStart: false,
           isChoosingStart: false,
@@ -304,6 +385,27 @@ export const useBoardLogic = () => {
   const startTileAction = useCallback(
     ({ playerId, landedTileId, landedTile }) => {
       const tileType = String(landedTile?.type || "");
+
+      // NEW: Mount Wrexo always triggers event for now
+      if (isWrexoView) {
+        const actionKey = makeActionKey();
+        setGameState((prev) => ({
+          ...prev,
+          activeAction: {
+            kind: "event",
+            playerId,
+            tileId: landedTileId,
+            tileType: "NPC",
+            afterTurnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
+            zoneId: "MW",
+            locationType: "npc",
+            actionKey,
+          },
+          pendingMove: null,
+          isAnimating: false,
+        }));
+        return;
+      }
 
       let kind = TILE_TYPE_TO_ACTION_KIND[tileType] || null;
 
@@ -346,8 +448,26 @@ export const useBoardLogic = () => {
         isAnimating: false,
       }));
     },
-    [setGameState]
+    [setGameState, isWrexoView]
   );
+
+  const exitMountWrexoDebug = useCallback(() => {
+    if (!activePlayer?.id) return;
+    if (activePlayer.climbingMountWrexo !== true) return;
+
+    const playerId = activePlayer.id;
+
+    setGameState((prev) => ({
+      ...prev,
+      players: (prev.players || []).map((p) => {
+        if (p.id !== playerId) return p;
+        return { ...p, climbingMountWrexo: false };
+      }),
+    }));
+
+    // advance turn to next player
+    endTurn({ endingPlayerId: playerId });
+  }, [activePlayer?.id, activePlayer?.climbingMountWrexo, setGameState, endTurn]);
 
   const onRoll = useCallback(async () => {
     if (!canRoll) return;
@@ -414,7 +534,7 @@ export const useBoardLogic = () => {
         return;
       }
 
-      const startIndexRaw = Number(mover.positionIndex);
+      const startIndexRaw = getPlayerPosIndexForView(mover);
       const startIndex = Number.isFinite(startIndexRaw) ? startIndexRaw : 0;
 
       const tileCount = Array.isArray(tiles) ? tiles.length : 0;
@@ -439,7 +559,7 @@ export const useBoardLogic = () => {
           tiles,
           playerId,
           startIndex,
-          setPlayerPosition: updatePlayerPosition,
+          setPlayerPosition: setPlayerPositionForView,
           stepDelayMs: 220,
         });
 
@@ -525,7 +645,8 @@ export const useBoardLogic = () => {
     onDebugRoll,
     onClockwise,
     onAnticlockwise,
-
     promptChooseStartingZone,
+    isWrexoView,
+    exitMountWrexoDebug,
   };
 };

@@ -54,6 +54,8 @@ const Board = () => {
     onDebugRoll,
     onClockwise,
     onAnticlockwise,
+    isWrexoView,
+    exitMountWrexoDebug,
   } = useBoardLogic();
 
   const layout = useMemo(() => {
@@ -217,6 +219,8 @@ const Board = () => {
         pendingMove={pendingMove}
         onClockwise={onClockwise}
         onAnticlockwise={onAnticlockwise}
+        isWrexoView={isWrexoView}
+        onExitMountWrexoDebug={exitMountWrexoDebug}
       />
 
       <div className="boardWrap" aria-label="Board">
