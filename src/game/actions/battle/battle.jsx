@@ -424,6 +424,17 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [] }) => {
         <Player playerState={battleState.player} />
         <Opponent opponentState={battleState.opponent} />
       </div>
+
+      {Array.isArray(battleState.lastTurnMessages) && battleState.lastTurnMessages.length > 0 ? (
+        <div className="battle__log">
+          <div className="battle__logTitle">Turn Log</div>
+          <div className="battle__logList">
+            {battleState.lastTurnMessages.map((msg, idx) => (
+              <div key={idx}>{msg}</div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
