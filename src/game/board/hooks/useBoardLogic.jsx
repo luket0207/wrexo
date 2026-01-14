@@ -438,6 +438,8 @@ export const useBoardLogic = () => {
       if (
         tileType === "Grass" ||
         tileType === "Feature" ||
+        tileType === "NPC" ||
+        tileType === "PokemonCentre" ||
         tileType === "PokeMart" ||
         tileType === "Trainer"
       ) {

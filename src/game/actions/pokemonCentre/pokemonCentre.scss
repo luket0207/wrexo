@@ -1,0 +1,25 @@
+.pokemonCentre {
+  padding: 16px;
+}
+
+.pokemonCentre__body {
+  margin: 12px 0;
+}
+
+.pokemonCentre__footer {
+  margin-top: 8px;
+}
+
+.pokemonCentre__ok {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #1f2937;
+  color: #fff;
+  cursor: pointer;
+}
+
+.pokemonCentre__ok:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

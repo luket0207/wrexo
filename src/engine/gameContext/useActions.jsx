@@ -33,8 +33,6 @@ export const useActions = () => {
     const nextTurnIndex =
       typeof action?.afterTurnIndex === "number" ? action.afterTurnIndex : fallbackNextTurnIndex;
 
-    // debug log removed
-
     endTurn({
       endingPlayerId,
       nextTurnIndex,
