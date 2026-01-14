@@ -49,6 +49,35 @@ const DiceRoll = ({
     return () => window.clearTimeout(t);
   }, [rollDurationMs, safeValue]);
 
+  const renderPips = (count) => {
+    const safeCount = clampInt(Number(count) || 1, 1, 6);
+
+    const patterns = {
+      1: [5],
+      2: [1, 9],
+      3: [1, 5, 9],
+      4: [1, 3, 7, 9],
+      5: [1, 3, 5, 7, 9],
+      6: [1, 3, 4, 6, 7, 9],
+    };
+
+    const active = patterns[safeCount] || patterns[1];
+
+    return (
+      <div className="diceRoll__pips" aria-hidden="true">
+        {Array.from({ length: 9 }).map((_, i) => {
+          const pos = i + 1;
+          const isOn = active.includes(pos);
+          return isOn ? (
+            <span key={pos} className="diceRoll__pip" />
+          ) : (
+            <span key={pos} className="diceRoll__pipSlot" />
+          );
+        })}
+      </div>
+    );
+  };
+
   if (safeSides !== 6) {
     return (
       <div className="diceRoll" aria-label={label} role="img">
@@ -71,12 +100,12 @@ const DiceRoll = ({
         }}
       >
         <div className="diceRoll__cube">
-          <div className="diceRoll__face diceRoll__face--top">1</div>
-          <div className="diceRoll__face diceRoll__face--front">2</div>
-          <div className="diceRoll__face diceRoll__face--right">3</div>
-          <div className="diceRoll__face diceRoll__face--left">4</div>
-          <div className="diceRoll__face diceRoll__face--bottom">5</div>
-          <div className="diceRoll__face diceRoll__face--back">6</div>
+          <div className="diceRoll__face diceRoll__face--top">{renderPips(1)}</div>
+          <div className="diceRoll__face diceRoll__face--front">{renderPips(2)}</div>
+          <div className="diceRoll__face diceRoll__face--right">{renderPips(3)}</div>
+          <div className="diceRoll__face diceRoll__face--left">{renderPips(4)}</div>
+          <div className="diceRoll__face diceRoll__face--bottom">{renderPips(5)}</div>
+          <div className="diceRoll__face diceRoll__face--back">{renderPips(6)}</div>
         </div>
       </div>
 

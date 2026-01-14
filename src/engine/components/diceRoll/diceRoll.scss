@@ -5,6 +5,7 @@
   justify-content: center;
   gap: 14px;
   padding: 10px 0;
+  height: 500px;
 }
 
 .diceRoll__caption {
@@ -164,4 +165,30 @@
 .diceRollDouble__total {
   font-size: 14px;
   opacity: 0.95;
+}
+
+.diceRoll__pips {
+  width: 80%;
+  height: 80%;
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  align-items: center;
+  justify-items: center;
+}
+
+.diceRoll__pipSlot {
+  width: 1px;
+  height: 1px;
+}
+
+.diceRoll__pip {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-image: url('../../../assets/images/pokeball.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
 }
