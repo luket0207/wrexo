@@ -1,5 +1,5 @@
 // game/board/hooks/useBoardLogic.jsx
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
 import { useGame } from "../../../engine/gameContext/gameContext";
@@ -204,19 +204,26 @@ export const useBoardLogic = () => {
   // We gate ONLY on per-player game state:
   // - hasChosenStart: done
   // - isChoosingStart: modal already active for them
+  const pendingStartPromptRef = useRef(null);
+
+  // Attempt to open immediately when player changes; if the board is busy,
+  // queue the prompt and open it once the board becomes idle.
   useEffect(() => {
     if (!activePlayer?.id) return;
 
-    // Board must be idle
-    if (activeAction || pendingMove || isAnimating) return;
+    // If already done or already choosing, clear any pending request and exit
+    if (activePlayer.hasChosenStart === true || activePlayer.isChoosingStart === true) {
+      pendingStartPromptRef.current = null;
+      return;
+    }
 
-    // If already done, nothing to do
-    if (activePlayer.hasChosenStart === true) return;
-
-    // If already choosing (modal active), do not reopen
-    if (activePlayer.isChoosingStart === true) return;
-
-    promptChooseStartingZone({ playerId: activePlayer.id });
+    // If board idle, open now; otherwise queue for when idle
+    if (!activeAction && !pendingMove && !isAnimating) {
+      pendingStartPromptRef.current = null;
+      promptChooseStartingZone({ playerId: activePlayer.id });
+    } else {
+      pendingStartPromptRef.current = activePlayer.id;
+    }
   }, [
     activePlayer?.id,
     activePlayer?.hasChosenStart,
@@ -226,6 +233,31 @@ export const useBoardLogic = () => {
     isAnimating,
     promptChooseStartingZone,
   ]);
+
+  // Watch for the board becoming idle and show any queued prompt for the
+  // current active player.
+  useEffect(() => {
+    const queued = pendingStartPromptRef.current;
+    if (!queued) return;
+    if (!activePlayer?.id) {
+      pendingStartPromptRef.current = null;
+      return;
+    }
+    // Only fire if the queued id matches the current active player
+    if (queued !== activePlayer.id) return;
+    if (activeAction || pendingMove || isAnimating) return;
+
+    pendingStartPromptRef.current = null;
+    promptChooseStartingZone({ playerId: activePlayer.id });
+  }, [activeAction, pendingMove, isAnimating, activePlayer?.id, promptChooseStartingZone]);
+
+  // Log when the active player (turn) changes.
+  useEffect(() => {
+    if (!activePlayer?.id) return;
+    const who = activePlayer?.name || activePlayer?.id || "unknown";
+    // Use console.log so it's easy to find in user logs
+    console.log(`Turn changed to player ${who}`);
+  }, [activePlayer?.id, activePlayer?.name]);
 
   // === FAINTING FLOW ===
   // On the player's next turn, heal and force them to choose start again.

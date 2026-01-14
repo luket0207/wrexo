@@ -81,45 +81,62 @@ export const useTurnTransition = () => {
       if (endingPlayerId && typeof tickEventsEndTurn === "function") {
         tickEventsEndTurn(endingPlayerId);
       }
+      // Use a snapshot to compute the next turn index and decide whether to
+      // prompt the player for starting choice instead of showing the Turn Start modal.
+      const playersSnapshot = Array.isArray(gameState?.players) ? gameState.players : [];
+      const computedNextIdx =
+        typeof nextTurnIndex === "number" && Number.isFinite(nextTurnIndex)
+          ? nextTurnIndex
+          : computeNextTurnIndex(gameState?.turnIndex, playersSnapshot.length);
 
-      // Compute next turn index using the *latest* state inside the setter
-      // (prevents stale closure issues and ensures playerCount is correct).
-      setGameState((prev) => {
-        const players = Array.isArray(prev?.players) ? prev.players : [];
-        const playerCount = players.length;
+      // If caller explicitly asked to suppress announcement, do so and do nothing else.
+      if (suppressAnnouncement) {
+        suppressNextAnnouncementRef.current = true;
+      }
 
-        const nextIdx =
-          typeof nextTurnIndex === "number" && Number.isFinite(nextTurnIndex)
-            ? nextTurnIndex
-            : computeNextTurnIndex(prev?.turnIndex, playerCount);
+      // Update the state (set the next turn index and clear transient flags)
+      setGameState((prev) => ({
+        ...prev,
+        ...(clearActiveAction ? { activeAction: null } : null),
+        ...(clearPendingMove ? { pendingMove: null } : null),
+        ...(clearAnimating ? { isAnimating: false } : null),
+        ...(clearLastRoll ? { lastRoll: null } : null),
+        turnIndex: computedNextIdx,
+      }));
 
-        // Control whether the turnIndex-change effect should announce.
-        // If we announce here, suppress the effect. If we do NOT announce here,
-        // allow the effect to announce normally.
-        if (suppressAnnouncement) {
-          suppressNextAnnouncementRef.current = true;
-        } else {
-          suppressNextAnnouncementRef.current = true;
+      // If the next player hasn't chosen a start, suppress the normal Turn Start
+      // modal and dispatch a platform event that the board logic can listen for
+      // to open the start-selection modal. Otherwise, show the normal Turn Start modal
+      // (unless suppressed above).
+      const nextPlayer = playersSnapshot?.[computedNextIdx] || null;
+      const shouldPromptStart = nextPlayer && nextPlayer.hasChosenStart !== true;
 
-          const name = players?.[nextIdx]?.name || "Player";
-          window.setTimeout(() => {
-            openModal({
-              title: "Turn Start",
-              content: `${name}'s turn.`,
-              buttons: MODAL_BUTTONS.OK,
-            });
-          }, 0);
-        }
+      if (shouldPromptStart) {
+        suppressNextAnnouncementRef.current = true;
+        const playerId = nextPlayer.id;
+        window.setTimeout(() => {
+          try {
+            window.dispatchEvent(
+              new CustomEvent("wrexo:promptChooseStartingZone", { detail: { playerId } })
+            );
+          } catch (e) {
+            // best-effort, ignore if dispatch fails
+          }
+        }, 0);
+        return;
+      }
 
-        return {
-          ...prev,
-          ...(clearActiveAction ? { activeAction: null } : null),
-          ...(clearPendingMove ? { pendingMove: null } : null),
-          ...(clearAnimating ? { isAnimating: false } : null),
-          ...(clearLastRoll ? { lastRoll: null } : null),
-          turnIndex: nextIdx,
-        };
-      });
+      if (!suppressAnnouncement) {
+        suppressNextAnnouncementRef.current = true;
+        const name = nextPlayer?.name || "Player";
+        window.setTimeout(() => {
+          openModal({
+            title: "Turn Start",
+            content: `${name}'s turn.`,
+            buttons: MODAL_BUTTONS.OK,
+          });
+        }, 0);
+      }
     },
     [setGameState, tickEventsEndTurn, openModal]
   );
