@@ -43,7 +43,7 @@ const Piece = ({ player, isActive = false }) => {
 
   return (
     <div
-      className={`piece ${isActive ? "is-active" : ""}`}
+      className={`piece ${isActive ? "is-active" : ""} ${player?.isFainted ? "is-fainted" : ""}`}
       title={player?.name}
       aria-label={`${player?.name} piece`}
     >
