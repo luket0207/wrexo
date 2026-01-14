@@ -43,7 +43,7 @@
 
 /* Controls */
 .boardControls {
-  width: 300px;
+  width: 315px;
   box-sizing: border-box;
   border-radius: 14px;
   overflow: hidden;
@@ -51,7 +51,7 @@
   background: #0b1220;
   color: rgba(255, 255, 255, 0.92);
   position: absolute;
-  top: 450px;
+  top: 380px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
@@ -135,4 +135,44 @@
 .boardControls__direction {
   display: grid;
   gap: 8px;
+}
+
+.boardControls__tileKey {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.boardControls__tileKeyTitle {
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.68);
+  margin-bottom: 10px;
+}
+
+.boardControls__tileKeyItems {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.boardControls__tileKeyItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.boardControls__tileKeyDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28) inset, 0 2px 8px rgba(0, 0, 0, 0.25);
+  flex: 0 0 auto;
+}
+
+.boardControls__tileKeyLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
 }

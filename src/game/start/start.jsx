@@ -65,6 +65,17 @@ const rotatePlayersSoFirst = (players, firstIndex) => {
   return [...arr.slice(idx), ...arr.slice(0, idx)];
 };
 
+// Pick an available colour. Prefer desired if free, otherwise first free, otherwise desired.
+const pickAvailableColour = ({ desired, usedSet }) => {
+  const want = String(desired || "").trim();
+  const all = COLOUR_OPTIONS.map((c) => c.value);
+
+  if (want && !usedSet.has(want)) return want;
+
+  const firstFree = all.find((c) => !usedSet.has(c));
+  return firstFree || want || all[0] || "red";
+};
+
 const Start = () => {
   const navigate = useNavigate();
   const { rollDice } = useDiceRoll();
@@ -107,10 +118,37 @@ const Start = () => {
 
   const updatePlayer = useCallback((index, patch) => {
     setPlayers((prev) => {
-      const copy = [...prev];
-      const current = copy[index] || { name: `Player ${index + 1}`, color: "red" };
-      copy[index] = { ...current, ...patch };
-      return copy;
+      const base = Array.isArray(prev) ? prev : [];
+      const copy = [...base];
+
+      const current = copy[index] || {
+        name: `Player ${index + 1}`,
+        color: "red",
+      };
+
+      // First apply patch
+      const nextPlayer = { ...current, ...patch };
+      copy[index] = nextPlayer;
+
+      // If colour changed, enforce uniqueness by adjusting THIS player only.
+      if (patch && Object.prototype.hasOwnProperty.call(patch, "color")) {
+        const used = new Set(
+          copy
+            .filter((_, i) => i !== index)
+            .map((p) => String(p?.color || "").trim())
+            .filter(Boolean)
+        );
+
+        const fixedColour = pickAvailableColour({
+          desired: nextPlayer.color,
+          usedSet: used,
+        });
+
+        copy[index] = { ...nextPlayer, color: fixedColour };
+      }
+
+      // Also ensure we didn't inherit duplicates from older state edits
+      return ensureUniqueColours(copy);
     });
 
     // Editing player details invalidates previous roll-to-start result
@@ -120,7 +158,10 @@ const Start = () => {
     setStartingIndex(null);
   }, []);
 
-  const activePlayers = useMemo(() => players.slice(0, playerCount), [players, playerCount]);
+  const activePlayers = useMemo(
+    () => players.slice(0, playerCount),
+    [players, playerCount]
+  );
 
   const canStart = useMemo(() => {
     if (activePlayers.length < 2 || activePlayers.length > 4) return false;
@@ -156,7 +197,10 @@ const Start = () => {
 
     isCancellingRef.current = false;
 
-    const safePlayers = activePlayers.map((p, i) => ({
+    // Ensure uniqueness right before starting (safety net)
+    const uniquePlayers = ensureUniqueColours(activePlayers);
+
+    const safePlayers = uniquePlayers.map((p, i) => ({
       name: String(p?.name || `Player ${i + 1}`).trim(),
       color: String(p?.color || "red").trim(),
     }));
@@ -175,8 +219,6 @@ const Start = () => {
 
           setStatus(`Rolling for ${playerName}...`);
 
-          // IMPORTANT: your diceRoll hook uses "title", not "modalTitle"
-          // Keep a small gap between modals so the previous one unmounts cleanly.
           const result = await withSafetyTimeout(
             rollDiceRef.current({
               min: 1,
@@ -197,6 +239,7 @@ const Start = () => {
           setRollsByIndex((prev) => ({ ...prev, [idx]: result }));
 
           // Modal unmount buffer
+          // eslint-disable-next-line no-await-in-loop
           await sleep(300);
           if (isCancellingRef.current) return;
         }
@@ -223,8 +266,6 @@ const Start = () => {
           navigate("/game", {
             state: {
               players: rotated,
-              // Optional metadata if you want it later:
-              // startingIndex: winnerIdx,
             },
           });
 
@@ -242,8 +283,6 @@ const Start = () => {
         await sleep(400);
       }
     } catch (err) {
-      // If something goes wrong, let the user try again.
-      // Keep it noisy in console for debugging.
       // eslint-disable-next-line no-console
       console.error(err);
 
@@ -259,13 +298,24 @@ const Start = () => {
     };
   }, []);
 
+  // Compute taken colours for disabling options in the UI (active players only)
+  const takenColoursByIndex = useMemo(() => {
+    const taken = new Map();
+    activePlayers.forEach((p, idx) => {
+      const c = String(p?.color || "").trim();
+      if (!c) return;
+      const arr = taken.get(c) || [];
+      arr.push(idx);
+      taken.set(c, arr);
+    });
+    return taken;
+  }, [activePlayers]);
+
   return (
     <div className="startRoot">
       <div className="startCard">
         <h1 className="startTitle">New Game</h1>
-        <p className="startSubtitle">
-          Choose player count, names, and colours to begin.
-        </p>
+        <p className="startSubtitle">Choose player count, names, and colours to begin.</p>
 
         <div className="startRow">
           <label className="startLabel">Players</label>
@@ -286,10 +336,7 @@ const Start = () => {
             <div key={idx} className="playerEditorRow">
               <div className="playerEditorHeader">
                 <div className="playerEditorTitle">Player {idx + 1}</div>
-                <span
-                  className="playerEditorSwatch"
-                  style={{ backgroundColor: p.color }}
-                />
+                <span className="playerEditorSwatch" style={{ backgroundColor: p.color }} />
               </div>
 
               <div className="playerEditorFields">
@@ -312,25 +359,23 @@ const Start = () => {
                     disabled={isDecidingOrder}
                     onChange={(e) => updatePlayer(idx, { color: e.target.value })}
                   >
-                    {COLOUR_OPTIONS.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
-                    ))}
+                    {COLOUR_OPTIONS.map((c) => {
+                      const users = takenColoursByIndex.get(c.value) || [];
+                      const takenByOther = users.length > 0 && !users.includes(idx);
+
+                      return (
+                        <option key={c.value} value={c.value} disabled={takenByOther}>
+                          {c.label}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
 
               <div style={{ marginTop: "10px", opacity: 0.9 }}>
-                Roll:{" "}
-                <strong>
-                  {rollsByIndex[idx] === undefined ? "-" : rollsByIndex[idx]}
-                </strong>
-                {startingIndex === idx ? (
-                  <span style={{ marginLeft: "10px" }}>
-                    (Starts)
-                  </span>
-                ) : null}
+                Roll: <strong>{rollsByIndex[idx] === undefined ? "-" : rollsByIndex[idx]}</strong>
+                {startingIndex === idx ? <span style={{ marginLeft: "10px" }}>(Starts)</span> : null}
               </div>
             </div>
           ))}

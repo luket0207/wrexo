@@ -9,9 +9,8 @@
   box-sizing: border-box;
   transition: all 0.3s ease;
 
-  border: 3px solid rgba(255, 255, 255, 0.2);  
-  box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.80);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8);
 
   /* default background if type missing */
   background: #111827;
@@ -28,30 +27,32 @@
 }
 
 /* ---------- Type background colors ---------- */
-/* Keep these simple placeholders; adjust later as desired. */
+/* Matched to Tile Key */
+
 .tile--type-pokemoncentre {
-  background: red;
+  background: #B3363A;
 }
 
 .tile--type-pokemart {
-  background: blue;
+  background: #2B4FA3;
 }
 
 .tile--type-grass {
-  background: green;
+  background: #2F7D4C;
 }
 
 .tile--type-feature {
-  background: purple;
+  background: #6A4FC9;
 }
 
 .tile--type-npc {
-  background: lightblue;
+  background: #4FA3C7;
 }
 
 .tile--type-trainer {
-  background: orange;
+  background: #C48A1B;
 }
+
 
 /* ---------- Zone border colors ---------- */
 /* HC: light blue */
@@ -76,10 +77,10 @@
 
 /* E: blue-green gradient */
 .tile--zone-e {
-  border-color:  #10b981;
+  border-color: #10b981;
 }
 
 /* D: mainly brown with a bit of green gradient */
 .tile--zone-d {
-  border-color: #8b5e34
+  border-color: #8b5e34;
 }
