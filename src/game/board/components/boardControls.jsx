@@ -59,7 +59,10 @@ const BoardControls = ({
   }, [active?.color]);
 
   return (
-    <aside className="boardControls" aria-label="Board controls">
+    <aside
+      className={`boardControls ${isWrexoView ? "mount-wrexo" : ""}`}
+      aria-label="Board controls"
+    >
       <div className="boardControls__turnHeader" style={{ backgroundColor: headerBg }}>
         <div className="boardControls__turnHeaderLabel">Turn</div>
         <div className="boardControls__turnHeaderName">{active?.name || "No active player"}</div>
@@ -126,11 +129,6 @@ const BoardControls = ({
             </button>
           </div>
         )}
-        {isWrexoView ? (
-          <button type="button" onClick={onExitMountWrexoDebug} className="secondary">
-            Debug: Return from Mount Wrexo
-          </button>
-        ) : null}
         {/* Tile Key */}
         <div className="boardControls__tileKey" aria-label="Tile key">
           <div className="boardControls__tileKeyTitle">Tile Key</div>

@@ -438,7 +438,7 @@ export const useBoardLogic = () => {
           setGameState((prev) => ({
             ...prev,
             activeAction: {
-              kind: "trainerBattle", // use the same kind your gameTemplate expects
+              kind: "battle",
               playerId,
               tileId: landedTileId,
               tileType,
@@ -478,7 +478,7 @@ export const useBoardLogic = () => {
           setGameState((prev) => ({
             ...prev,
             activeAction: {
-              kind: "event", // or "feature" if you already have a feature action
+              kind: "event",
               playerId,
               tileId: landedTileId,
               tileType,

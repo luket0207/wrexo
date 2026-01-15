@@ -11,6 +11,7 @@ import { useGame } from "../../engine/gameContext/gameContext";
 import { getActionConfig } from "./components/actionRegistry";
 
 import boardBgImg from "../../assets/images/board/board.png";
+import mountWrexoBgImg from "../../assets/images/board/mount-wrexo-board.png";
 
 import { getActionBackgroundStyle } from "./utils/actionBackground";
 
@@ -63,15 +64,24 @@ const GameLayout = ({ onNewGame }) => {
     return actionCfg ? "action" : "board";
   }, [actionCfg]);
 
-  const boardBgStyle = useMemo(
-    () => ({
-      backgroundImage: `url(${boardBgImg})`,
+  const players = Array.isArray(gameState?.players) ? gameState.players : [];
+  const safeTurnIndex = Math.min(
+    Math.max(Number(gameState?.turnIndex) || 0, 0),
+    Math.max(players.length - 1, 0)
+  );
+  const activePlayer = players[safeTurnIndex] || null;
+
+  const isWrexoView = activePlayer?.climbingMountWrexo === true;
+
+  const boardBgStyle = useMemo(() => {
+    const img = isWrexoView ? mountWrexoBgImg : boardBgImg;
+    return {
+      backgroundImage: `url(${img})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
-    }),
-    []
-  );
+    };
+  }, [isWrexoView]);
 
   const containerStyle = useMemo(() => {
     if (view === "board") return boardBgStyle;

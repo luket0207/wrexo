@@ -57,6 +57,26 @@
 /* Mount Wrexo */
 .tile--type-elitebattle {
   background: #f6c343; /* vibrant gold */
+  box-shadow: 0 0 12px rgba(246, 195, 67, 0.6);
+  animation: elitePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes elitePulse {
+  0% {
+    box-shadow:
+      0 0 6px rgba(246, 195, 67, 0.4),
+      0 0 12px rgba(246, 195, 67, 0.6);
+  }
+  50% {
+    box-shadow:
+      0 0 14px rgba(246, 195, 67, 0.8),
+      0 0 28px rgba(246, 195, 67, 1);
+  }
+  100% {
+    box-shadow:
+      0 0 6px rgba(246, 195, 67, 0.4),
+      0 0 12px rgba(246, 195, 67, 0.6);
+  }
 }
 
 .tile--type-path {

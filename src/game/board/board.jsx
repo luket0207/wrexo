@@ -65,14 +65,15 @@ const Board = () => {
     const WOBBLE_SEED = 9; // change this to get a totally different path BEST: 9
     const size = 900;
     const center = size / 2;
-    // Base settings
-    const baseRadius = 380;
+
+    // Base settings (switchable by view)
+    const baseRadius = isWrexoView ? 350 : 380;
     // Target spacing between tiles in pixels
     const stepPx = 15;
     // Wobble amplitude in pixels
-    const wobbleAmplitude = 100;
+    const wobbleAmplitude = isWrexoView ? 0 : 100;
     // Start angle (degrees -> radians)
-    const startAngle = degToRad(190);
+    const startAngle = degToRad(isWrexoView ? 359 : 190);
 
     const positions = new Map();
 
@@ -162,7 +163,7 @@ const Board = () => {
       const radius = radii[i];
 
       const x = center + radius * Math.cos(theta);
-      const y = center + (radius + 30) * Math.sin(theta);
+      const y = center + (radius + (isWrexoView ? -120 : 30)) * Math.sin(theta);
 
       positions.set(t.id, { x, y });
 
@@ -170,7 +171,7 @@ const Board = () => {
     }
 
     return { size, center, positions };
-  }, [tiles]);
+  }, [tiles, isWrexoView]);
 
   // Precompute piece placements (NO jitter; keep aligned with tiles)
   const piecePlacements = useMemo(() => {

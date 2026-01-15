@@ -55,6 +55,10 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
+
+  &.mount-wrexo {
+    top: 280px;
+  }
 }
 
 .boardControls__turnHeader {
