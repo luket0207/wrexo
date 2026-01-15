@@ -10,6 +10,15 @@ const TILE_KEY = Object.freeze([
   { label: "Trainer", color: "#bd7440" },
 ]);
 
+const TILE_KEY_WREXO = Object.freeze([
+  { label: "Elite Battle", color: "#F6C343" }, // vibrant gold
+  { label: "Poke Mart", color: "#2B4FA3" }, // same as board
+  { label: "Feature", color: "#f5d7a0" }, // same as board
+  { label: "NPC", color: "#4FA3C7" }, // same as board
+  { label: "Trainer", color: "#bd7440" }, // same as board
+  { label: "Path", color: "#2F3A44" }, // dark slate grey
+]);
+
 const BoardControls = ({
   players,
   activePlayerId,
@@ -28,6 +37,10 @@ const BoardControls = ({
     () => players.find((p) => p.id === activePlayerId) || null,
     [players, activePlayerId]
   );
+
+  const tileKeyToShow = useMemo(() => {
+    return isWrexoView ? TILE_KEY_WREXO : TILE_KEY;
+  }, [isWrexoView]);
 
   const pendingForActive = useMemo(() => {
     if (!pendingMove || !active) return null;
@@ -123,7 +136,7 @@ const BoardControls = ({
           <div className="boardControls__tileKeyTitle">Tile Key</div>
 
           <div className="boardControls__tileKeyItems">
-            {TILE_KEY.map((t) => (
+            {tileKeyToShow.map((t) => (
               <div key={t.label} className="boardControls__tileKeyItem">
                 <span
                   className="boardControls__tileKeyDot"

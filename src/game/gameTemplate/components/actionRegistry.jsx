@@ -10,10 +10,26 @@ export const ACTIONS = Object.freeze({
     component: PokemonEncounter,
     hideUi: true,
   },
+
+  // Canonical battle action
   battle: {
     component: BattleContainer,
     hideUi: true,
   },
+
+  // Alias: some parts of your board logic are emitting this kind
+  trainerBattle: {
+    component: BattleContainer,
+    hideUi: true,
+  },
+
+  // (Optional) if you later add a separate elite battle component,
+  // you can switch this to a different component.
+  eliteBattle: {
+    component: EventAction,
+    hideUi: false,
+  },
+
   event: {
     component: EventAction,
     hideUi: false,
@@ -29,12 +45,20 @@ export const ACTIONS = Object.freeze({
 });
 
 export const TILE_TYPE_TO_ACTION_KIND = Object.freeze({
+  // Main board
   Grass: "pokemonEncounter",
   Feature: "pokemonEncounter",
   NPC: "event",
   PokeMart: "pokeMart",
   Trainer: "battle",
   PokemonCentre: "pokemonCentre",
+
+  // Mount Wrexo (if you use these type strings)
+  EliteBattle: "eliteBattle",
+  Path: "event",
 });
 
-export const getActionConfig = (kind) => ACTIONS[kind] || null;
+export const getActionConfig = (kind) => {
+  const k = typeof kind === "string" ? kind.trim() : "";
+  return ACTIONS[k] || null;
+};

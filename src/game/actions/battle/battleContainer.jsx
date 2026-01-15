@@ -32,9 +32,50 @@ const findPokemonById = (dex, id) => {
   return arr.find((p) => getPokemonId(p) === target) || null;
 };
 
-const cloneForBattle = (pokemonObj) => {
+const normalizePokemonForBattle = (pokemonObj) => {
   if (!pokemonObj || typeof pokemonObj !== "object") return null;
-  return { ...pokemonObj };
+
+  const baseHealth = toNumber(pokemonObj.health, NaN);
+  const baseMax = toNumber(pokemonObj.maxHealth, NaN);
+
+  // Best-effort defaults: battle engine often expects numbers
+  const maxHealth =
+    Number.isFinite(baseMax)
+      ? baseMax
+      : Number.isFinite(baseHealth)
+        ? baseHealth
+        : toNumber(pokemonObj.hp, 10);
+
+  const health =
+    Number.isFinite(baseHealth)
+      ? baseHealth
+      : Number.isFinite(maxHealth)
+        ? maxHealth
+        : 10;
+
+  return {
+    ...pokemonObj,
+    maxHealth,
+    health,
+  };
+};
+
+const validateOpponentPokemon = (pokemonObj) => {
+  if (!pokemonObj || typeof pokemonObj !== "object") return { ok: false, reason: "missing_object" };
+
+  const id = getPokemonId(pokemonObj);
+  if (!id) return { ok: false, reason: "missing_id" };
+
+  const hp = toNumber(pokemonObj.health, NaN);
+  const max = toNumber(pokemonObj.maxHealth, NaN);
+
+  if (!Number.isFinite(hp) || !Number.isFinite(max)) {
+    return { ok: false, reason: "missing_health_fields", id, hp, max };
+  }
+
+  // If your battle engine requires specific move slots, you can tighten this later.
+  // For now, just ensure object is sane.
+  return { ok: true };
 };
 
 const BattleContainer = () => {
@@ -71,7 +112,8 @@ const BattleContainer = () => {
 
   const zoneCode = useMemo(() => {
     const raw = action?.zoneId ?? action?.zone ?? "EE";
-    return String(raw).trim() || "EE";
+    const z = typeof raw === "string" ? raw : raw?.code;
+    return String(z || "EE").trim().toUpperCase() || "EE";
   }, [action?.zoneId, action?.zone]);
 
   const playerTeam = useMemo(
@@ -93,35 +135,72 @@ const BattleContainer = () => {
   const playerLevel = useMemo(() => Number(player?.level) || 1, [player?.level]);
 
   const opponent = useMemo(() => {
-    const encounter = buildTrainerEncounter({ level: playerLevel, zoneCode });
-    if (!encounter?.ok) return { ok: false, reason: encounter?.reason || "unknown" };
+    try {
+      const encounter = buildTrainerEncounter({ level: playerLevel, zoneCode });
 
-    const picked = findPokemonById(pokemonDex, encounter.pokemonId);
-    if (!picked) {
+      if (!encounter?.ok) {
+        console.error("BattleContainer: encounter not ok", { zoneCode, playerLevel, encounter });
+        return { ok: false, reason: encounter?.reason || "unknown" };
+      }
+
+      const pickedRaw = findPokemonById(pokemonDex, encounter.pokemonId);
+
+      if (!pickedRaw) {
+        console.error("BattleContainer: pokemon not found in dex", {
+          zoneCode,
+          playerLevel,
+          pokemonId: encounter.pokemonId,
+          trainer: encounter.trainer,
+        });
+
+        return {
+          ok: false,
+          reason: "pokemon_not_found_in_dex",
+          trainer: encounter.trainer,
+          pokemonId: encounter.pokemonId,
+        };
+      }
+
+      const picked = normalizePokemonForBattle({ ...pickedRaw });
+      const validation = validateOpponentPokemon(picked);
+
+      if (!validation.ok) {
+        console.error("BattleContainer: opponent pokemon failed validation", {
+          zoneCode,
+          playerLevel,
+          pokemonId: encounter.pokemonId,
+          trainer: encounter.trainer,
+          validation,
+          picked,
+        });
+
+        return {
+          ok: false,
+          reason: "opponent_pokemon_invalid",
+          trainer: encounter.trainer,
+          pokemonId: encounter.pokemonId,
+          validation,
+        };
+      }
+
+      const opponentTeam = [picked].filter(Boolean);
+
       return {
-        ok: false,
-        reason: "pokemon_not_found_in_dex",
+        ok: true,
         trainer: encounter.trainer,
+        trainerType: encounter.trainerType,
         pokemonId: encounter.pokemonId,
+        pokemonName: getPokemonName(picked),
+        team: opponentTeam,
       };
+    } catch (e) {
+      console.error("BattleContainer: exception building opponent", e, { zoneCode, playerLevel });
+      return { ok: false, reason: "exception_building_opponent" };
     }
-
-    const opponentTeam = [cloneForBattle(picked)].filter(Boolean);
-
-    return {
-      ok: true,
-      trainer: encounter.trainer,
-      trainerType: encounter.trainerType,
-      pokemonId: encounter.pokemonId,
-      pokemonName: getPokemonName(picked),
-      team: opponentTeam,
-    };
   }, [playerLevel, zoneCode]);
 
   const beginBattle = useCallback(() => {
     // Freeze the teams at the moment battle begins.
-    // This prevents the battle UI from disappearing when the player's last
-    // usable Pokemon hits 0 HP (which would otherwise make usableTeamForBattle=[]).
     if (!frozenPlayerTeamRef.current) {
       frozenPlayerTeamRef.current = Array.isArray(usableTeamForBattle)
         ? usableTeamForBattle.map((p) => ({ ...p }))
@@ -140,10 +219,10 @@ const BattleContainer = () => {
     if (!actionKey) return;
     if (shownForActionKeyRef.current === actionKey) return;
 
-    // NOTE: This effect is only for initial entry gating.
-    // Once battleStarted, we do NOT want to auto-end or re-open anything.
+    // Entry gating only
     if (battleStarted) return;
 
+    // If no player, bail out cleanly
     if (!player) {
       shownForActionKeyRef.current = actionKey;
       endActiveAction();
@@ -151,7 +230,6 @@ const BattleContainer = () => {
     }
 
     // Require at least one usable pokemon (hp > 0) to START a battle.
-    // But do not enforce this after battle has started (battle must remain mounted until user exits).
     if (usableTeamForBattle.length === 0) {
       shownForActionKeyRef.current = actionKey;
       openModal({
@@ -163,11 +241,19 @@ const BattleContainer = () => {
       return;
     }
 
+    // If opponent cannot be generated, show modal and return to board (no crash)
     if (!opponent?.ok) {
       shownForActionKeyRef.current = actionKey;
+
+      const extra =
+        opponent?.reason === "pokemon_not_found_in_dex"
+          ? ` (Missing: ${String(opponent?.pokemonId || "").trim() || "unknown"})`
+          : "";
+
       openModal({
         title: "Trainer Battle",
-        content: "A trainer wants to battle you, but the encounter could not be generated.",
+        content:
+          "A trainer wants to battle you, but the encounter could not be generated." + extra,
         buttons: MODAL_BUTTONS.OK,
         onClick: endActiveAction,
       });
@@ -210,12 +296,16 @@ const BattleContainer = () => {
     ? frozenOpponentTeamRef.current
     : [];
 
-  // IMPORTANT: Do NOT unmount battle if the current live team becomes empty.
-  // The battle must remain mounted until the user clicks "Return to Board".
   if (frozenPlayerTeam.length === 0) return null;
   if (frozenOpponentTeam.length === 0) return null;
 
-  return <Battle playerId={playerId} playerTeam={frozenPlayerTeam} opponentTeam={frozenOpponentTeam} />;
+  return (
+    <Battle
+      playerId={playerId}
+      playerTeam={frozenPlayerTeam}
+      opponentTeam={frozenOpponentTeam}
+    />
+  );
 };
 
 export default BattleContainer;

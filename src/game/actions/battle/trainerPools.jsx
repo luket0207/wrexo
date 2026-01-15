@@ -26,6 +26,9 @@ const LEVEL_1_2 = Object.freeze([
       B: "N/A",
       E: "OD01, OD02, OD03, BT01, BT02, BT03, PR01, PR02, PR03, TG01, TG02, TG03",
       D: "N/A",
+
+      // Mount Wrexo (MW)
+      MW: "BU01, BU02, BU03, EK04, EK05, EK06, GM03, GM04, GM05, TG04, TG05, TG06, PN02, PN03, PN04, SC02, SC03, SC04",
     }),
   },
   {
@@ -38,6 +41,9 @@ const LEVEL_1_2 = Object.freeze([
       B: "MA01, MA02, MA03, GF01, GF02, GF03, PT01, PT02, PT03",
       E: "N/A",
       D: "N/A",
+
+      // Mount Wrexo (MW)
+      MW: "CH01, CH02, CH03, VP04, GF01, GF02, GF03, PT04, FL01",
     }),
   },
   {
@@ -50,6 +56,9 @@ const LEVEL_1_2 = Object.freeze([
       B: "N/A",
       E: "HS01, HS02, HS03, PL01, PL02, PL03, PS01, PS02, PS03",
       D: "N/A",
+
+      // Mount Wrexo (MW)
+      MW: "SQ01, SQ02, SQ03, PS04, PS05, PS06, PL04, PL05, PL06, LP02, LP03, LP04, VA01",
     }),
   },
   {
@@ -62,6 +71,9 @@ const LEVEL_1_2 = Object.freeze([
       B: "N/A",
       E: "N/A",
       D: "N/A",
+
+      // Mount Wrexo (MW)
+      MW: "PK01, PK02, PK03, MG04, VX04, EB02, EB03, EB04, JO01",
     }),
   },
   {
@@ -74,6 +86,9 @@ const LEVEL_1_2 = Object.freeze([
       B: "SS01, SS02, SS03, CW01, CW02, CW03, DG01, DG02, DG03",
       E: "MC01, MC02, MC03, MK01, MK02, MK03, CW01, CW02, CW03",
       D: "GD01, GD02, GD03, ON01, ON02, ON03, DG01, DG02, DG03",
+
+      // Mount Wrexo (MW)
+      MW: "SS04, SS05, SS06, DG04, DG05, DG06, RH01, RH02, RH03, ON03, ON04, ON05",
     }),
   },
   {
@@ -86,6 +101,9 @@ const LEVEL_1_2 = Object.freeze([
       B: "N/A",
       E: "N/A",
       D: "GA01, GA02, GA03, DR01, DR02, DR03, JY01, JY02, JY03",
+
+      // Mount Wrexo (MW)
+      MW: "DR04, DR05, DR06, MM03, MM04, MM05, JY02, JY03, JY04",
     }),
   },
   {
@@ -99,6 +117,9 @@ const LEVEL_1_2 = Object.freeze([
       B: "RA01, RA02, RA03, TA01, TA02, TA03, DD01, DD02, DD03",
       E: "N/A",
       D: "SP01, SP02, SP03, JG01, JG02, JG03, MN01, MN02, MN03, CL01, CL02, CL03",
+
+      // Mount Wrexo (MW)
+      MW: "PI04, PI05, PI06, SP04, SP05, SP06, TA03, TA04, TA05, SN01, SN02, SN03, AD01, AD02, AD03, LK01, LK02, LK03, CY01, CY02, CY03",
     }),
   },
 ]);
@@ -116,6 +137,9 @@ const LEVEL_3_4 = Object.freeze([
       E:
         "OD01, OD02, OD03, BT01, BT02, BT03, PR01, PR02, PR03, OD04, OD05, OD06, PR04, PR05, PR06, TG04, TG05, TG06, BT04, BT05, BT06, BT07, BT08, BT09",
       D: "N/A",
+
+      // Mount Wrexo (MW)
+      MW: "BU04, BU05, BU06, EK04, EK05, EK06, GM04, GM05, GM06, TG05, TG06, PN04, PN05, PN06, SC04, SC05, SC06",
     }),
   },
   {
@@ -128,6 +152,9 @@ const LEVEL_3_4 = Object.freeze([
       B: "MA01, MA02, MA03, MA04, MA05, MA06, GF01, GF02, GF03, PT01, PT02, PT03, PT04, PT05, PT06",
       E: "N/A",
       D: "N/A",
+
+      // Mount Wrexo (MW)
+      MW: "CH04, CH05, CH06, VP05, VP06, GF01, GF02, GF03, GF04, GF05, GF06, PT04, PT05, FL01, FL02",
     }),
   },
   {
@@ -142,6 +169,9 @@ const LEVEL_3_4 = Object.freeze([
       B: "N/A",
       E: "HS01, HS02, HS03, PL01, PL02, PL03, PS01, PS02, PS03, PL04, PL05, PL06, PL07, PL08, PL09",
       D: "N/A",
+
+      // Mount Wrexo (MW)
+      MW: "SQ04, SQ05, SQ06, PL04, PL05, PL06, PL07, PL08, PS04, PS05, PS06, LP04, LP05, LP06, VA01, VA02",
     }),
   },
   {
@@ -154,6 +184,9 @@ const LEVEL_3_4 = Object.freeze([
       B: "N/A",
       E: "N/A",
       D: "N/A",
+
+      // Mount Wrexo (MW)
+      MW: "PK02, PK03, PK04, MG05, MG06, VX05, VX06, EB04, EB05, EB06, JO01, JO02",
     }),
   },
   {
@@ -166,6 +199,9 @@ const LEVEL_3_4 = Object.freeze([
       B: "SS01, SS02, SS03, CW01, CW02, CW03, DG01, DG02, DG03, DG04, DG05, DG06, SS04, SS05, SS06",
       E: "MC01, MC02, MC03, MK01, MK02, MK03, CW01, CW02, CW03, MC04, MC05, MC06, MK04, MK05, MK06",
       D: "GD01, GD02, GD03, ON01, ON02, ON03, ON04, ON05, ON06, DG01, DG02, DG03, GD04, GD05, GD06, RH01, RH02, RH03",
+
+      // Mount Wrexo (MW)
+      MW: "MC04, MC05, MC06, DG04, DG05, DG06, RH04, RH05, RH06, ON04, ON05, ON06",
     }),
   },
   {
@@ -178,6 +214,9 @@ const LEVEL_3_4 = Object.freeze([
       B: "N/A",
       E: "N/A",
       D: "GA01, GA02, GA03, DR01, DR02, DR03, JY01, JY02, JY03, JY04, JY05, JY06, GA04, GA05, GA06",
+
+      // Mount Wrexo (MW)
+      MW: "DR04, DR05, DR06, MM04, MM05, MM06, JY04, JY05, JY06, AB04, AB05, GA04, GA05",
     }),
   },
   {
@@ -192,6 +231,9 @@ const LEVEL_3_4 = Object.freeze([
         "RA01, RA02, RA03, TA01, TA02, TA03, DD01, DD02, DD03, DD04, DD05, DD06, KN01, KN02, KN03, KN04, KN05, KN06",
       E: "N/A",
       D: "SP01, SP02, SP03, JG01, JG02, JG03, MN01, MN02, MN03, JG04, JG05, JG06, MN04, MN05, MN06",
+
+      // Mount Wrexo (MW)
+      MW: "PI05, PI06, PI07, SP04, SP05, SP06, TA04, TA05, TA06, SN03, SN04, SN05, AD04, AD05, AD06, LK04, LK05, LK06, CY02, CY03, CY04",
     }),
   },
 ]);

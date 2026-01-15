@@ -29,16 +29,17 @@
 /* ---------- Type background colors ---------- */
 /* Matched to Tile Key */
 
+/* Main board */
 .tile--type-pokemoncentre {
-  background: #B3363A;
+  background: #b3363a;
 }
 
 .tile--type-pokemart {
-  background: #2B4FA3;
+  background: #2b4fa3;
 }
 
 .tile--type-grass {
-  background: #2F7D4C;
+  background: #2f7d4c;
 }
 
 .tile--type-feature {
@@ -46,13 +47,21 @@
 }
 
 .tile--type-npc {
-  background: #4FA3C7;
+  background: #4fa3c7;
 }
 
 .tile--type-trainer {
   background: #bd7440;
 }
 
+/* Mount Wrexo */
+.tile--type-elitebattle {
+  background: #f6c343; /* vibrant gold */
+}
+
+.tile--type-path {
+  background: #2f3a44; /* dark slate grey */
+}
 
 /* ---------- Zone border colors ---------- */
 /* HC: light blue */
@@ -83,4 +92,9 @@
 /* D: mainly brown with a bit of green gradient */
 .tile--zone-d {
   border-color: #8b5e34;
+}
+
+/* MW: Mount Wrexo (optional but recommended) */
+.tile--zone-mw {
+  border-color: #f6c343; /* match elite gold as a strong identifier */
 }

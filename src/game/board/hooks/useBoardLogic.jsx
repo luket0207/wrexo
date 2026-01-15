@@ -386,27 +386,123 @@ export const useBoardLogic = () => {
     ({ playerId, landedTileId, landedTile }) => {
       const tileType = String(landedTile?.type || "");
 
-      // NEW: Mount Wrexo always triggers event for now
+      // ============================
+      // Mount Wrexo rules
+      // ============================
       if (isWrexoView) {
         const actionKey = makeActionKey();
-        setGameState((prev) => ({
-          ...prev,
-          activeAction: {
-            kind: "event",
-            playerId,
-            tileId: landedTileId,
-            tileType: "NPC",
-            afterTurnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
-            zoneId: "MW",
-            locationType: "npc",
-            actionKey,
-          },
-          pendingMove: null,
-          isAnimating: false,
-        }));
+
+        const forceEvent = () => {
+          setGameState((prev) => ({
+            ...prev,
+            activeAction: {
+              kind: "event",
+              playerId,
+              tileId: landedTileId,
+              tileType,
+              afterTurnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
+              zoneId: "MW",
+              locationType: "npc",
+              actionKey,
+            },
+            pendingMove: null,
+            isAnimating: false,
+          }));
+        };
+
+        // Elite Battle: event 100%
+        if (tileType === "EliteBattle") {
+          forceEvent();
+          return;
+        }
+
+        // Path: 20% event, otherwise just end turn
+        if (tileType === "Path") {
+          if (Math.random() < 0.2) {
+            forceEvent();
+            return;
+          }
+
+          // no action, just end turn
+          setGameState((prev) => ({
+            ...prev,
+            pendingMove: null,
+            isAnimating: false,
+          }));
+          endTurn({ endingPlayerId: playerId });
+          return;
+        }
+
+        // Trainer: same as board, but MW zone dictates pool
+        if (tileType === "Trainer") {
+          setGameState((prev) => ({
+            ...prev,
+            activeAction: {
+              kind: "trainerBattle", // use the same kind your gameTemplate expects
+              playerId,
+              tileId: landedTileId,
+              tileType,
+              afterTurnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
+              zoneId: "MW",
+              locationType: "trainer",
+              actionKey,
+            },
+            pendingMove: null,
+            isAnimating: false,
+          }));
+          return;
+        }
+
+        // NPC / Feature / PokeMart: same as board (for now, treat as their normal kinds)
+        // If your actionRegistry keys are different, align them here.
+        if (tileType === "PokeMart") {
+          setGameState((prev) => ({
+            ...prev,
+            activeAction: {
+              kind: "pokeMart",
+              playerId,
+              tileId: landedTileId,
+              tileType,
+              afterTurnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
+              zoneId: "MW",
+              locationType: "pokemart",
+              actionKey,
+            },
+            pendingMove: null,
+            isAnimating: false,
+          }));
+          return;
+        }
+
+        if (tileType === "Feature") {
+          setGameState((prev) => ({
+            ...prev,
+            activeAction: {
+              kind: "event", // or "feature" if you already have a feature action
+              playerId,
+              tileId: landedTileId,
+              tileType,
+              afterTurnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
+              zoneId: "MW",
+              locationType: "feature",
+              actionKey,
+            },
+            pendingMove: null,
+            isAnimating: false,
+          }));
+          return;
+        }
+
+        // Default: NPC-like
+        forceEvent();
         return;
       }
 
+      // ============================
+      // Main board rules (existing)
+      // ============================
+
+      // (keep your existing main-board logic below unchanged)
       let kind = TILE_TYPE_TO_ACTION_KIND[tileType] || null;
 
       const ENCOUNTER_CHANCE_BY_TILE = Object.freeze({
@@ -421,11 +517,28 @@ export const useBoardLogic = () => {
 
       if (!kind) return;
 
-      const zoneRaw = landedTile?.zoneId ?? landedTile?.zone ?? null;
-      const zoneId =
-        typeof zoneRaw === "string"
-          ? zoneRaw
-          : (zoneRaw && typeof zoneRaw === "object" ? zoneRaw.code : null) || "EE";
+      const zoneId = (() => {
+        // preferred explicit fields first
+        const direct =
+          landedTile?.zoneId ??
+          landedTile?.zoneCode ??
+          landedTile?.zone?.code ??
+          landedTile?.zone?.id ??
+          landedTile?.zone ??
+          null;
+
+        if (typeof direct === "string") {
+          const z = direct.trim();
+          return z ? z.toUpperCase() : "EE";
+        }
+
+        if (direct && typeof direct === "object") {
+          const code = typeof direct.code === "string" ? direct.code.trim() : "";
+          return code ? code.toUpperCase() : "EE";
+        }
+
+        return "EE";
+      })();
 
       const locationType =
         tileType === "Feature" ? "feature" : tileType === "Trainer" ? "trainer" : "grass";
@@ -448,7 +561,7 @@ export const useBoardLogic = () => {
         isAnimating: false,
       }));
     },
-    [setGameState, isWrexoView]
+    [setGameState, isWrexoView, endTurn]
   );
 
   const exitMountWrexoDebug = useCallback(() => {

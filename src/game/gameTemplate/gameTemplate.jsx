@@ -1,4 +1,3 @@
-// game/gameTemplate/gameTemplate.jsx
 import React, { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./gameTemplate.scss";
@@ -35,20 +34,34 @@ const GameLayout = ({ onNewGame }) => {
   const { gameState } = useGame();
   const activeAction = gameState?.activeAction || null;
 
-  const hideUi = useMemo(() => {
+  const actionCfg = useMemo(() => {
     const kind = activeAction?.kind;
-    const cfg = getActionConfig(kind);
-    return !!cfg?.hideUi;
+    return getActionConfig(kind);
   }, [activeAction?.kind]);
+
+  const hideUi = useMemo(() => {
+    return !!actionCfg?.hideUi;
+  }, [actionCfg?.hideUi]);
 
   const actionBgStyle = useMemo(() => {
-    return getActionBackgroundStyle(activeAction);
-  }, [activeAction]);
+    // Only attempt action background if the action kind is registered
+    if (!actionCfg) return null;
+
+    try {
+      return getActionBackgroundStyle(activeAction);
+    } catch (e) {
+      console.error("getActionBackgroundStyle crashed; falling back to board background", e, {
+        kind: activeAction?.kind,
+        activeAction,
+      });
+      return null;
+    }
+  }, [actionCfg, activeAction]);
 
   const view = useMemo(() => {
-    const kind = activeAction?.kind;
-    return kind ? "action" : "board";
-  }, [activeAction?.kind]);
+    // IMPORTANT: treat "action view" only when the kind is registered
+    return actionCfg ? "action" : "board";
+  }, [actionCfg]);
 
   const boardBgStyle = useMemo(
     () => ({
@@ -69,7 +82,10 @@ const GameLayout = ({ onNewGame }) => {
     <div className="gameTemplateRoot">
       {!hideUi ? <GameUi onNewGame={onNewGame} /> : null}
 
-      <main className={`gameTemplateContent ${view === "board" ? "is-board" : ""}`} style={containerStyle}>
+      <main
+        className={`gameTemplateContent ${view === "board" ? "is-board" : ""}`}
+        style={containerStyle}
+      >
         <GameScene />
       </main>
     </div>

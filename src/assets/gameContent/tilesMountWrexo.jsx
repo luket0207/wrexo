@@ -51,7 +51,7 @@ export const MOUNT_WREXO_TILES = Object.freeze(
       id: `MW${pad2(n)}`, // MW01..MW36
       tileNumber: n,
       zone: { code: "MW", name: "Mount Wrexo" },
-      type: "NPC", // key: forces NPC-like behavior for now
+      type: t.wrexoKind,
       wrexoKind: t.wrexoKind,
       name: t.name,
     };
