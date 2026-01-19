@@ -1,4 +1,3 @@
-// DebugMoveControls.jsx
 import React, { useMemo } from "react";
 import { getActivePokemon } from "../battleEngine";
 
@@ -8,6 +7,8 @@ const DebugMoveControls = ({
   disabled,
   sideState,
   onManualSlot,
+  playerName = "Player",
+  opponentName = "Opponent",
 }) => {
   const active = useMemo(() => getActivePokemon(sideState), [sideState]);
 
@@ -15,11 +16,11 @@ const DebugMoveControls = ({
     ? active.battleMoves
     : new Array(6).fill(null);
 
+  const titleName = side === "PLAYER" ? playerName : opponentName;
+
   return (
     <div className="battle__manualPanel">
-      <div className="battle__manualTitle">
-        {side === "PLAYER" ? "Player debug moves" : "Opponent debug moves"}
-      </div>
+      <div className="battle__manualTitle">{titleName} debug moves</div>
 
       <div className="battle__manualGrid">
         {moves.map((moveName, idx) => {

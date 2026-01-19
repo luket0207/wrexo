@@ -5,9 +5,11 @@ import FirstDecision from "./components/firstDecision";
 import BattleSide from "./components/battleSide";
 import BattleResult from "./components/battleResult";
 
-import { createBattleState, getTurnLabel, prepareStartOfTurn, TURN } from "./battleEngine";
 import { useDiceRoll } from "../../../engine/components/diceRoll/diceRoll";
 import { useGame } from "../../../engine/gameContext/gameContext";
+
+import { createBattleState, getTurnLabel, prepareStartOfTurn, TURN } from "./battleEngine";
+import { MODAL_BUTTONS, useModal } from "../../../engine/ui/modal/modalContext";
 
 import moves from "../../../assets/gameContent/moves";
 import { createMoveMap } from "./battleMoveMap";
@@ -38,9 +40,17 @@ const pickPersistedFieldsFromBattlePokemon = (battlePokemon) => {
   };
 };
 
-const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBattle = false }) => {
+const Battle = ({
+  playerId = null,
+  playerName = "Player",
+  opponentName = "Opponent",
+  playerTeam = [],
+  opponentTeam = [],
+  isEliteBattle = false,
+}) => {
   const { rollDice, evenDiceRoll, minMaxDiceRoll } = useDiceRoll();
   const { setGameState } = useGame();
+  const { openModal, closeModal } = useModal();
 
   // Capture initial teams ONCE so GameContext sync updates don't reset battle flow.
   const initialPlayerTeamRef = useRef(null);
@@ -107,12 +117,86 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBa
 
   const getBattleState = useCallback(() => battleStateRef.current, []);
 
+  // ============================
+  // KO MODAL (faint -> auto switch) - robust detection
+  // ============================
+  const pendingKoModalRef = useRef(null);
+  const lastKoSigRef = useRef("");
+
+  const stageKoModalIfNeeded = (prev, next) => {
+    if (!prev || !next) return;
+
+    const computeEventForSide = (sideKey, labelName) => {
+      const prevSide = prev?.[sideKey];
+      const nextSide = next?.[sideKey];
+
+      const prevTeam = Array.isArray(prevSide?.team) ? prevSide.team : [];
+      const nextTeam = Array.isArray(nextSide?.team) ? nextSide.team : [];
+
+      const prevIdx = Number.isFinite(prevSide?.activeIndex) ? prevSide.activeIndex : 0;
+      const nextIdx = Number.isFinite(nextSide?.activeIndex) ? nextSide.activeIndex : 0;
+
+      if (!prevTeam[prevIdx] || !nextTeam[nextIdx]) return null;
+
+      // Only trigger when the active index actually changes
+      if (prevIdx === nextIdx) return null;
+
+      // KO detection: the pokemon that WAS active is now fainted (in the next state)
+      const prevSlotInNext = nextTeam[prevIdx] || null;
+      const wasKo = !!prevSlotInNext?.fainted || (Number(prevSlotInNext?.health) || 0) <= 0;
+
+      if (!wasKo) return null;
+
+      const faintedName = String(prevTeam[prevIdx]?.name || "Pokemon");
+      const nextName = String(nextTeam[nextIdx]?.name || "Pokemon");
+
+      const sig = `${sideKey}:${prevSlotInNext?.id || faintedName}:${nextTeam[nextIdx]?.id || nextName}:${nextIdx}`;
+      if (lastKoSigRef.current === sig) return null;
+
+      lastKoSigRef.current = sig;
+
+      return `${faintedName} was knocked out. ${labelName} sent out ${nextName}.`;
+    };
+
+    // Usually only one side swaps per resolution; check player first, then opponent.
+    const msg =
+      computeEventForSide("player", playerName) || computeEventForSide("opponent", opponentName);
+
+    if (msg) pendingKoModalRef.current = msg;
+  };
+
+  const setBattleStateWithKo = useCallback(
+    (updater) => {
+      setBattleState((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        stageKoModalIfNeeded(prev, next);
+        return next;
+      });
+    },
+    [setBattleState]
+  );
+
+  // Show the KO modal after state updates (message staged in the updater above)
+  useEffect(() => {
+    const msg = pendingKoModalRef.current;
+    if (!msg) return;
+
+    pendingKoModalRef.current = null;
+
+    openModal({
+      title: "Pokemon Knocked Out",
+      content: msg,
+      buttons: MODAL_BUTTONS.OK,
+      onClick: closeModal,
+    });
+  }, [battleState, openModal, closeModal]);
+
   // Create controller once; it uses refs + setters so it doesn't stale-close
   const controllerRef = useRef(null);
   if (!controllerRef.current) {
     controllerRef.current = createTurnController({
       getBattleState,
-      setBattleState,
+      setBattleState: setBattleStateWithKo,
       setLastSelection,
       setCurrentAction,
       isResolvingTurnRef,
@@ -134,11 +218,11 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBa
     if (!battleState) return;
     if (battleState.status === "FINISHED") return;
 
-    setBattleState((prev) => {
+    setBattleStateWithKo((prev) => {
       if (!prev || prev.status === "FINISHED") return prev;
       return prepareStartOfTurn(prev);
     });
-  }, [battleState?.turn, battleState?.status]);
+  }, [battleState?.turn, battleState?.status, setBattleStateWithKo]);
 
   const handleOrderComplete = useCallback(({ playerTeamOrdered: p, opponentTeamOrdered: o }) => {
     setPlayerTeamOrdered(p);
@@ -327,12 +411,21 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBa
         playerTeam={initialPlayerTeam}
         opponentTeam={initialOpponentTeam}
         onOrderComplete={handleOrderComplete}
+        playerName={playerName}
+        opponentName={opponentName}
       />
     );
   }
 
   if (phase === BATTLE_PHASE.FIRST_DECISION) {
-    return <FirstDecision onDecided={handleFirstDecided} onCancel={() => {}} />;
+    return (
+      <FirstDecision
+        onDecided={handleFirstDecided}
+        onCancel={() => {}}
+        playerName={playerName}
+        opponentName={opponentName}
+      />
+    );
   }
 
   if (!battleState || !firstTurn) {
@@ -344,7 +437,7 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBa
     );
   }
 
-  const turnLabel = getTurnLabel(battleState.turn);
+  const turnLabel = battleState.turn === TURN.OPPONENT ? opponentName : playerName;
 
   return (
     <div className="battle">
@@ -354,6 +447,8 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBa
         <BattleResult
           winner={battleState.winner}
           playerId={playerId}
+          playerName={playerName}
+          opponentName={opponentName}
           playerTeam={battleState?.player?.team || []}
           isEliteBattle={isEliteBattle}
         />
@@ -392,6 +487,8 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBa
                 disabled={isResolvingTurnRef.current || battleState.status === "FINISHED"}
                 sideState={battleState.player}
                 onManualSlot={(slot) => handleManualMove(TURN.PLAYER, slot)}
+                playerName={playerName}
+                opponentName={opponentName}
               />
             ) : null}
           </div>
@@ -429,8 +526,8 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBa
       </div>
 
       <div className="battle__grid">
-        <BattleSide title="Player" sideState={battleState.player} />
-        <BattleSide title="Opponent" sideState={battleState.opponent} />
+        <BattleSide sideState={battleState.player} isPlayer={true} />
+        <BattleSide sideState={battleState.opponent} />
       </div>
 
       {Array.isArray(battleState.lastTurnMessages) && battleState.lastTurnMessages.length > 0 ? (

@@ -13,11 +13,14 @@ const withSafetyTimeout = (promise, label) =>
     }),
   ]);
 
-const FirstDecision = ({ onDecided, onCancel }) => {
+const FirstDecision = ({ onDecided, onCancel, playerName = "Player", opponentName = "Opponent" }) => {
   const { rollDice } = useDiceRoll();
 
   const rollDiceRef = useRef(rollDice);
   const onDecidedRef = useRef(onDecided);
+
+  const playerNameRef = useRef(playerName);
+  const opponentNameRef = useRef(opponentName);
 
   useEffect(() => {
     rollDiceRef.current = rollDice;
@@ -26,6 +29,14 @@ const FirstDecision = ({ onDecided, onCancel }) => {
   useEffect(() => {
     onDecidedRef.current = onDecided;
   }, [onDecided]);
+
+  useEffect(() => {
+    playerNameRef.current = playerName;
+  }, [playerName]);
+
+  useEffect(() => {
+    opponentNameRef.current = opponentName;
+  }, [opponentName]);
 
   const [playerRoll, setPlayerRoll] = useState(null);
   const [opponentRoll, setOpponentRoll] = useState(null);
@@ -43,7 +54,7 @@ const FirstDecision = ({ onDecided, onCancel }) => {
     const decide = async () => {
       while (!isCancelled) {
         try {
-          setStatus("Rolling for player...");
+          setStatus(`Rolling for ${playerNameRef.current}...`);
           const p = await withSafetyTimeout(
             rollDiceRef.current({
               min: 1,
@@ -51,7 +62,7 @@ const FirstDecision = ({ onDecided, onCancel }) => {
               sides: 6,
               rollDurationMs: 2000,
               autoCloseSeconds: 3,
-              modalTitle: "Player Roll",
+              modalTitle: `${playerNameRef.current} Roll`,
             }),
             "player"
           );
@@ -64,7 +75,7 @@ const FirstDecision = ({ onDecided, onCancel }) => {
           await sleep(300);
           if (isCancelled) return;
 
-          setStatus("Rolling for opponent...");
+          setStatus(`Rolling for ${opponentNameRef.current}...`);
           const o = await withSafetyTimeout(
             rollDiceRef.current({
               min: 1,
@@ -72,7 +83,7 @@ const FirstDecision = ({ onDecided, onCancel }) => {
               sides: 6,
               rollDurationMs: 2000,
               autoCloseSeconds: 3,
-              modalTitle: "Opponent Roll",
+              modalTitle: `${opponentNameRef.current} Roll`,
             }),
             "opponent"
           );
@@ -82,14 +93,14 @@ const FirstDecision = ({ onDecided, onCancel }) => {
 
           if (p > o) {
             setWinner("PLAYER");
-            setStatus("Player goes first.");
+            setStatus(`${playerNameRef.current} goes first.`);
             if (typeof onDecidedRef.current === "function") onDecidedRef.current("PLAYER");
             return;
           }
 
           if (o > p) {
             setWinner("OPPONENT");
-            setStatus("Opponent goes first.");
+            setStatus(`${opponentNameRef.current} goes first.`);
             if (typeof onDecidedRef.current === "function") onDecidedRef.current("OPPONENT");
             return;
           }
@@ -120,10 +131,10 @@ const FirstDecision = ({ onDecided, onCancel }) => {
 
       <div style={{ marginTop: "12px", opacity: 0.9 }}>
         <div>
-          Player roll: <strong>{playerRoll === null ? "-" : playerRoll}</strong>
+          {playerName} roll: <strong>{playerRoll === null ? "-" : playerRoll}</strong>
         </div>
         <div>
-          Opponent roll: <strong>{opponentRoll === null ? "-" : opponentRoll}</strong>
+          {opponentName} roll: <strong>{opponentRoll === null ? "-" : opponentRoll}</strong>
         </div>
 
         <div style={{ marginTop: "10px" }}>
@@ -132,7 +143,7 @@ const FirstDecision = ({ onDecided, onCancel }) => {
 
         {winner ? (
           <div style={{ marginTop: "10px" }}>
-            Winner: <strong>{winner === "PLAYER" ? "Player" : "Opponent"}</strong>
+            Winner: <strong>{winner === "PLAYER" ? playerName : opponentName}</strong>
           </div>
         ) : null}
       </div>

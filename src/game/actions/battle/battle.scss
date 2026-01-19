@@ -1,5 +1,10 @@
 /* battle.scss */
-/* Shared styling for Player/Opponent panels */
+
+.battle {
+  background: #0b1220AA;
+  width: 90%;
+  margin: 5%;
+}
 
 .battle-sideCard {
   padding: 12px;
@@ -29,6 +34,66 @@
 .battle-sideCard__benchInner {
   margin-top: 8px;
 }
+
+.battle-sideCard__sprite img {
+  width: 100px;
+  height: 100px;
+  image-rendering: pixelated;
+
+}
+
+.battle-benchBalls {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.battle-benchBall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 70px; // gives room for the name; adjust as needed
+}
+
+.battle-benchBall__circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-benchBall__img {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.battle-benchBall.empty .battle-benchBall__circle {
+  border: 2px solid #000;
+  background: transparent;
+}
+
+.battle-benchBall.full .battle-benchBall__circle {
+  background: transparent;
+  border: 2px solid transparent; // keeps sizing consistent
+}
+
+.battle-benchBall.fainted .battle-benchBall__circle {
+  background: #000;
+  opacity: 0.5;
+  border: 2px solid transparent;
+}
+
+.battle-benchBall__name {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.1;
+  text-align: center;
+  width: 100%;
+}
+
 
 /* HP */
 

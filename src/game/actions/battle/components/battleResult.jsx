@@ -3,9 +3,9 @@ import { useActions } from "../../../../engine/gameContext/useActions";
 import { useGame } from "../../../../engine/gameContext/gameContext";
 import { TURN } from "../battleEngine";
 
-const getWinnerLabel = (winner) => {
-  if (winner === TURN.PLAYER) return "Player";
-  if (winner === TURN.OPPONENT) return "Opponent";
+const getWinnerLabel = (winner, playerName, opponentName) => {
+  if (winner === TURN.PLAYER) return playerName;
+  if (winner === TURN.OPPONENT) return opponentName;
   return "Unknown";
 };
 
@@ -18,7 +18,14 @@ const hasAnyAlivePokemon = (team) => {
   return false;
 };
 
-const BattleResult = ({ winner, playerId = null, playerTeam = [], isEliteBattle = false }) => {
+const BattleResult = ({
+  winner,
+  playerId = null,
+  playerName = "Player",
+  opponentName = "Opponent",
+  playerTeam = [],
+  isEliteBattle = false,
+}) => {
   const { endActiveAction } = useActions();
   const { setGameState, setPlayerFainted } = useGame();
 
@@ -30,8 +37,8 @@ const BattleResult = ({ winner, playerId = null, playerTeam = [], isEliteBattle 
 
   const bannerText = useMemo(() => {
     if (isEliteBattle && winner === TURN.PLAYER) return "Elite Battle Won!";
-    if (playerWiped) return "Player has run out of Pokemon. Player fainted.";
-    return `Battle Over! Winner: ${getWinnerLabel(winner)}`;
+    if (playerWiped) return `${playerName} has run out of Pokemon. ${playerName} fainted.`;
+    return `Battle Over! Winner: ${getWinnerLabel(winner, playerName, opponentName)}`;
   }, [winner, playerWiped, isEliteBattle]);
 
   const clearPartyStatuses = (prev, pid) => {

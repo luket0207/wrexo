@@ -1058,7 +1058,7 @@ const pokemon = [
     catchRate: 4,
     retreat: 4,
     health: 25,
-    attackArray: [null, "Shockwave", null, "Quick Attack", null, "Spark"],
+    attackArray: [null, "Shock Wave", null, "Quick Attack", null, "Spark"],
   },
   {
     id: "PK02",
@@ -1072,7 +1072,7 @@ const pokemon = [
     catchRate: 4,
     retreat: 4,
     health: 30,
-    attackArray: [null, "Shockwave", null, "Thunder Wave", null, "Spark"],
+    attackArray: [null, "Shock Wave", null, "Thunder Wave", null, "Spark"],
   },
   {
     id: "PK03",
@@ -1100,7 +1100,7 @@ const pokemon = [
     catchRate: 3,
     retreat: 3,
     health: 45,
-    attackArray: ["Thunderbolt", null, "Shockwave", null, "Thunder Shock", "Spark"],
+    attackArray: ["Thunderbolt", null, "Shock Wave", null, "Thunder Shock", "Spark"],
   },
   {
     id: "PK05",
@@ -1114,7 +1114,7 @@ const pokemon = [
     catchRate: 3,
     retreat: 3,
     health: 55,
-    attackArray: ["Thunderbolt", null, "Shockwave", null, "Thunder Wave", "Spark"],
+    attackArray: ["Thunderbolt", null, "Shock Wave", null, "Thunder Wave", "Spark"],
   },
   {
     id: "PK06",
@@ -1128,7 +1128,7 @@ const pokemon = [
     catchRate: 3,
     retreat: 3,
     health: 65,
-    attackArray: ["Thunder", null, "Shockwave", null, "Thunder Shock", "Spark"],
+    attackArray: ["Thunder", null, "Shock Wave", null, "Thunder Shock", "Spark"],
   },
 
   // ======================

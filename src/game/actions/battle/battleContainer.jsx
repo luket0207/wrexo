@@ -503,6 +503,10 @@ const BattleContainer = () => {
   return (
     <Battle
       playerId={playerId}
+      playerName={String(player?.name || player?.displayName || "Player").trim() || "Player"}
+      opponentName={
+        String(opponent?.trainer || opponent?.trainerType || "Opponent").trim() || "Opponent"
+      }
       playerTeam={frozenPlayerTeam}
       opponentTeam={frozenOpponentTeam}
       isEliteBattle={isEliteBattle}

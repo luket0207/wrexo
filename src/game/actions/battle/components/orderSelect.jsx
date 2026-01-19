@@ -12,7 +12,13 @@ const shuffleWithRng = (arr) => {
   return copy;
 };
 
-const OrderSelect = ({ playerTeam = [], opponentTeam = [], onOrderComplete }) => {
+const OrderSelect = ({
+  playerTeam = [],
+  opponentTeam = [],
+  onOrderComplete,
+  playerName = "Player",
+  opponentName = "Opponent",
+}) => {
   const playerOptions = useMemo(() => playerTeam ?? [], [playerTeam]);
   const playerCount = playerOptions.length;
 
@@ -118,12 +124,13 @@ const OrderSelect = ({ playerTeam = [], opponentTeam = [], onOrderComplete }) =>
       <div>
         <h1>Battle Setup</h1>
         <div style={{ marginTop: "12px", opacity: 0.85 }}>
-          Player has {playerCount} Pokemon. Order selection {playerCount === 1 ? "is skipped" : "not required"}.
+          {playerName} has {playerCount} Pokemon. Order selection{" "}
+          {playerCount === 1 ? "is skipped" : "not required"}.
         </div>
         <div style={{ marginTop: "16px", opacity: 0.85 }}>
-          <div>Opponent order is randomized automatically.</div>
+          <div>{opponentName} order is randomized automatically.</div>
           <div>
-            (Current opponent order):{" "}
+            (Current {opponentName} order):{" "}
             {opponentOrder.length > 0 ? opponentOrder.map((p) => p.name).join(", ") : "None"}
           </div>
         </div>
@@ -136,7 +143,7 @@ const OrderSelect = ({ playerTeam = [], opponentTeam = [], onOrderComplete }) =>
       <h1>Battle Setup</h1>
 
       <h2 style={{ marginTop: "12px" }}>
-        Choose Player Order ({requiredSelections} Pokemon)
+        Choose {playerName} Order ({requiredSelections} Pokemon)
       </h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
@@ -166,9 +173,9 @@ const OrderSelect = ({ playerTeam = [], opponentTeam = [], onOrderComplete }) =>
       </div>
 
       <div style={{ marginTop: "16px", opacity: 0.85 }}>
-        <div>Opponent order is randomized automatically.</div>
+        <div>{opponentName} order is randomized automatically.</div>
         <div>
-          (Current opponent order):{" "}
+          (Current {opponentName} order):{" "}
           {opponentOrder.length > 0 ? opponentOrder.map((p) => p.name).join(", ") : "None"}
         </div>
       </div>

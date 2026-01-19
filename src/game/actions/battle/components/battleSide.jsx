@@ -1,9 +1,80 @@
+// game/actions/battle/components/battleSide.jsx
 import React, { useMemo } from "react";
 import Bars from "../../../../engine/ui/bars/bars";
 import { getActivePokemon, getBenchPokemon } from "../battleEngine";
+import moves from "../../../../assets/gameContent/moves";
+import { createMoveMap } from "../battleMoveMap";
+import PokemonImage from "../../../components/pokemonImage/pokemonImage";
 import "../battle.scss";
+import pokeballImg from "../../../../assets/images/pokeball.png";
+
+const formatStatusEffect = (effectName, effectStrengthRaw) => {
+  const esNum = Number(effectStrengthRaw);
+  const ES = Number.isFinite(esNum) ? esNum : 0;
+
+  switch (effectName) {
+    case "Burn":
+      return `Burn the opponent for ${ES} turns.`;
+    case "Paralyse":
+      return `Paralyse the opponent for ${ES} turns.`;
+    case "Poison":
+      return `Poison the opponent for ${ES} turns.`;
+    case "Confuse":
+      return `Confuse ${ES} of the opponents moves next turn.`;
+    case "Sleep":
+      return `Send the opponent to sleep for ${ES} turns.`;
+    case "Heal":
+      return `Heal your pokemon by ${ES * 10}.`;
+    case "RAE":
+      return `Roll again, if even increase the attack by ${ES * 10}.`;
+    case "RAM":
+      return `Roll again, if 1 or 6 increase the attack by ${ES * 10}.`;
+    case "RASELF":
+      return `Roll again, if even you avoid recoil, if odd deal ${ES * 10} recoil damage.`;
+    case "SELF":
+      return `${ES * 10} recoil damage.`;
+    case "SleepSELF":
+    case "sleepSELF":
+      return `Your pokemon falls asleep for ${ES} turns.`;
+    default:
+      return null;
+  }
+};
+
+const getMoveDetailsString = (moveObj) => {
+  if (!moveObj || typeof moveObj !== "object") return "";
+
+  const dmg = Number(moveObj.damage);
+  const hasDamage = Number.isFinite(dmg);
+  const damageText = hasDamage ? `DMG: ${dmg}` : null;
+
+  const effectsRaw = Array.isArray(moveObj.statusEffects)
+    ? moveObj.statusEffects
+    : typeof moveObj.statusEffect === "string"
+      ? [
+          {
+            effect: moveObj.statusEffect,
+            strength: moveObj.statusEffectStrength,
+          },
+        ]
+      : [];
+
+  const effectTexts = effectsRaw
+    .map((e) => {
+      const eff = String(e?.effect || "").trim();
+      if (!eff) return null;
+      return formatStatusEffect(eff, e?.strength);
+    })
+    .filter(Boolean);
+
+  if (!damageText && effectTexts.length === 0) return "";
+
+  return [damageText, ...effectTexts].filter(Boolean).join(" | ");
+};
 
 const MoveSlots = ({ pokemon }) => {
+  const moveMap = useMemo(() => createMoveMap(moves), []);
+
   const safeMoves = Array.isArray(pokemon?.battleMoves)
     ? pokemon.battleMoves
     : new Array(6).fill(null);
@@ -22,6 +93,9 @@ const MoveSlots = ({ pokemon }) => {
           const slot = idx + 1;
           const isConfused = confuseSlots.includes(slot);
 
+          const moveObj = !isLocked && moveName ? moveMap[moveName] : null;
+          const details = moveObj ? getMoveDetailsString(moveObj) : "";
+
           return (
             <div
               key={`move-slot-${idx}`}
@@ -30,7 +104,12 @@ const MoveSlots = ({ pokemon }) => {
               }`}
             >
               <div className="battle-moves__slotIndex">{slot}</div>
+
               <div className="battle-moves__slotName">{isLocked ? "Locked" : moveName}</div>
+
+              {!isLocked && details ? (
+                <div className="battle-moves__slotMeta">{details}</div>
+              ) : null}
             </div>
           );
         })}
@@ -48,24 +127,6 @@ const HpBar = ({ pokemon }) => {
   return (
     <div className="battle-hp">
       <Bars min={0} max={max} current={current} />
-    </div>
-  );
-};
-
-const BenchList = ({ bench }) => {
-  if (!bench || bench.length === 0) return <div>None</div>;
-
-  return (
-    <div className="battle-benchList">
-      {bench.map((p) => (
-        <div key={p.id} className={`battle-benchCard ${p.fainted ? "is-fainted" : ""}`}>
-          <div className="battle-benchCard__name">
-            <strong>{p.name}</strong> ({p.id})
-          </div>
-          <div className="battle-benchCard__meta">Lv {p.level}</div>
-          <HpBar pokemon={p} />
-        </div>
-      ))}
     </div>
   );
 };
@@ -96,17 +157,75 @@ const StatusLine = ({ pokemon }) => {
   );
 };
 
-const BattleSide = ({ sideState, title = null }) => {
+const toNumber = (v, fallback = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const isAlive = (p) => toNumber(p?.health, 0) > 0;
+
+// Replace BenchPokeBalls with this version (and stop passing `bench` in)
+
+const BenchPokeBalls = ({ team, isPlayer = false }) => {
+  const safeTeam = Array.isArray(team) ? team : [];
+  const slots = [safeTeam[0] ?? null, safeTeam[1] ?? null, safeTeam[2] ?? null];
+
+  return (
+    <div className={`battle-benchBalls ${isPlayer ? "is-player" : ""}`}>
+      {slots.map((p, idx) => {
+        const state = !p ? "empty" : isAlive(p) ? "full" : "fainted";
+
+        return (
+          <div key={`party-slot-${idx}`} className={`battle-benchBall ${state}`}>
+            <div className="battle-benchBall__circle">
+              {state === "empty" ? null : (
+                <img
+                  className="battle-benchBall__img"
+                  src={pokeballImg}
+                  alt={state === "fainted" ? "Fainted Pokemon" : "Pokemon"}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+            </div>
+
+            {isPlayer ? <div className="battle-benchBall__name">{p ? p.name : ""}</div> : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// Pass isPlayer={true} for the player's side so sprites are "back" facing.
+// Opponent can omit it (defaults false).
+const BattleSide = ({ sideState, isPlayer = false }) => {
   const active = useMemo(() => getActivePokemon(sideState), [sideState]);
-  const bench = useMemo(() => getBenchPokemon(sideState), [sideState]);
+  const team = Array.isArray(sideState?.team) ? sideState.team : [];
 
   return (
     <div className="battle-sideCard">
-      {title ? <div className="battle-sideCard__title">{title}</div> : null}
-
       <div className="battle-sideCard__current">
         <div className="battle-sideCard__activeLine">
-          <strong>Active:</strong> {active ? `${active.name} (${active.id})` : "None"}
+          {active ? (
+            <>
+              <PokemonImage
+                pokemon={active}
+                animate={true}
+                back={isPlayer}
+                shiny={active?.shiny}
+                className="battle-sideCard__sprite"
+                alt={active?.name || "Pokemon"}
+              />
+              <div className="battle-sideCard__activeText">
+                <strong></strong> {`${active.name}`}
+              </div>
+            </>
+          ) : (
+            <>
+              <strong>Active:</strong> None
+            </>
+          )}
         </div>
 
         {active ? (
@@ -126,7 +245,7 @@ const BattleSide = ({ sideState, title = null }) => {
       <div className="battle-sideCard__bench">
         <strong>Bench:</strong>
         <div className="battle-sideCard__benchInner">
-          <BenchList bench={bench} />
+          <BenchPokeBalls team={team} isPlayer={isPlayer} />
         </div>
       </div>
     </div>
