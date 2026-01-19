@@ -1,45 +1,80 @@
 /* battle.scss */
 
 .battle {
-  background: #0b1220AA;
-  width: 90%;
-  margin: 5%;
+  background: #ffffffaa;
+  width: 100%;
+  height: 100%;
 }
 
 .battle-sideCard {
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  display: flex;
-}
+  &.is-player {
+    margin: 30px;
 
-.battle-sideCard__title {
-  margin: 0 0 8px 0;
-}
+    .battle-sideCard__pokemonImage {
+      z-index: 1;
+      position: relative;
+      left: 50px;
 
-.battle-sideCard__activeLine {
-  margin-top: 8px;
-}
+      img {
+        width: 250px;
+        height: 250px;
+        image-rendering: pixelated;
+      }
+    }
 
-.battle-sideCard__activeMeta {
-  font-size: 12px;
-  opacity: 0.8;
-  margin-top: 4px;
-}
+    .battle-sideCard__details {
+      background-color: #ffffffcc;
+      width: 100%;
+      padding: 20px;
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: 200px auto;
+      z-index: 2;
+      position: relative;
+      column-gap: 30px;
 
-.battle-sideCard__bench {
-  margin-top: 14px;
-}
+      &-bench {
+        grid-column: 1;
+      }
 
-.battle-sideCard__benchInner {
-  margin-top: 8px;
-}
+      &-moves {
+        grid-row: 1;
+        grid-column: 2;
+      }
+    }
+  }
 
-.battle-sideCard__sprite img {
-  width: 100px;
-  height: 100px;
-  image-rendering: pixelated;
+  &.is-opponent {
+    display: grid;
+    grid-template-columns: 400px 440px;
+    align-items: flex-end;
+    margin: 30px;
+    margin-bottom: 0px;
 
+    .battle-sideCard__pokemonImage {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      justify-self: center;
+
+      img {
+        width: 120px;
+        height: 120px;
+        image-rendering: pixelated;
+      }
+    }
+
+    .battle-sideCard__details {
+      grid-column: 1;
+      grid-row: 1;
+      background-color: #ffffffcc;
+      padding: 20px;
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: 200px 150px;
+      margin-bottom: 30px;
+    }
+  }
 }
 
 .battle-benchBalls {
@@ -94,7 +129,6 @@
   width: 100%;
 }
 
-
 /* HP */
 
 .battle-hp {
@@ -108,10 +142,6 @@
 }
 
 /* Moves */
-
-.battle-moves {
-  margin-top: 10px;
-}
 
 .battle-moves__title {
   font-weight: 600;
@@ -171,7 +201,11 @@
 }
 
 .battle__turn {
-  margin-top: 12px;
+  width: 100%;
+  background-color: #fff;
+  height: 40px;
+  text-align: center;
+  padding-top: 7px;
 }
 
 .battle__controls {
@@ -179,6 +213,7 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  display: none;
 }
 
 .battle__opponentStatus {
@@ -214,10 +249,6 @@
 }
 
 .battle__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 16px;
 }
 
 .battle-moves__slot.is-confused {

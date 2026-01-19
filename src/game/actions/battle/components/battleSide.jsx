@@ -199,55 +199,57 @@ const BenchPokeBalls = ({ team, isPlayer = false }) => {
 
 // Pass isPlayer={true} for the player's side so sprites are "back" facing.
 // Opponent can omit it (defaults false).
-const BattleSide = ({ sideState, isPlayer = false }) => {
+const BattleSide = ({ sideState, isPlayer = false, playerName }) => {
   const active = useMemo(() => getActivePokemon(sideState), [sideState]);
   const team = Array.isArray(sideState?.team) ? sideState.team : [];
 
   return (
-    <div className="battle-sideCard">
-      <div className="battle-sideCard__current">
-        <div className="battle-sideCard__activeLine">
-          {active ? (
-            <>
-              <PokemonImage
-                pokemon={active}
-                animate={true}
-                back={isPlayer}
-                shiny={active?.shiny}
-                className="battle-sideCard__sprite"
-                alt={active?.name || "Pokemon"}
-              />
-              <div className="battle-sideCard__activeText">
-                <strong></strong> {`${active.name}`}
-              </div>
-            </>
-          ) : (
-            <>
-              <strong>Active:</strong> None
-            </>
+    <div className={`battle-sideCard ${isPlayer ? "is-player" : "is-opponent"}`}>
+      <div className="battle-sideCard__pokemonImage">
+        {active ? (
+          <PokemonImage
+            pokemon={active}
+            animate={true}
+            back={isPlayer}
+            shiny={active?.shiny}
+            className="battle-sideCard__sprite"
+            alt={active?.name || "Pokemon"}
+          />
+        ) : (
+          <>
+            <strong>Active:</strong> None
+          </>
+        )}
+      </div>
+
+      {active ? (
+        <div className="battle-sideCard__details">
+          <div className="battle-sideCard__details-stats">
+            <p>{`${playerName}`}</p>
+            <p>{`${active.name}`}</p>
+            Lv {active.level} • {active.type}
+            <StatusLine pokemon={active} />
+            <HpBar pokemon={active} />
+            {isPlayer && (
+              <>
+                <p>Bench</p>
+                <BenchPokeBalls team={team} isPlayer={isPlayer} />
+              </>
+            )}
+          </div>
+          {!isPlayer && (
+            <div className="battle-sideCard__details-bench">
+              <p>Bench</p>
+              <BenchPokeBalls team={team} isPlayer={isPlayer} />
+            </div>
+          )}
+          {isPlayer && (
+            <div className="battle-sideCard__details-moves">
+              <MoveSlots pokemon={active} />
+            </div>
           )}
         </div>
-
-        {active ? (
-          <>
-            <div className="battle-sideCard__activeMeta">
-              Lv {active.level} • {active.type} • {active.rarity}
-            </div>
-
-            <StatusLine pokemon={active} />
-
-            <HpBar pokemon={active} />
-            <MoveSlots pokemon={active} />
-          </>
-        ) : null}
-      </div>
-
-      <div className="battle-sideCard__bench">
-        <strong>Bench:</strong>
-        <div className="battle-sideCard__benchInner">
-          <BenchPokeBalls team={team} isPlayer={isPlayer} />
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 };

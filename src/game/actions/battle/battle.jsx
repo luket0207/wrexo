@@ -72,7 +72,7 @@ const Battle = ({
   const initialOpponentTeam = initialOpponentTeamRef.current;
 
   // Toggle between "Debug" (manual controls + gated opponent) and "Normal" (player rolls, opponent auto rolls)
-  const [debugManualControls, setDebugManualControls] = useState(true);
+  const [debugManualControls, setDebugManualControls] = useState(false);
 
   // Keep dice functions in refs for safety inside async flows
   const rollDiceRef = useRef(rollDice);
@@ -441,8 +441,6 @@ const Battle = ({
 
   return (
     <div className="battle">
-      <h1>Battle</h1>
-
       {battleState.status === "FINISHED" ? (
         <BattleResult
           winner={battleState.winner}
@@ -454,9 +452,7 @@ const Battle = ({
         />
       ) : null}
 
-      <div className="battle__turn">
-        Turn: <strong>{turnLabel}</strong>
-      </div>
+      <div className="battle__turn">{turnLabel}'s Turn</div>
 
       <div className="battle__controls">
         <div className="battle__controlBlock">
@@ -477,7 +473,7 @@ const Battle = ({
               onClick={handlePlayerRoll}
               disabled={isResolvingTurnRef.current || battleState.status === "FINISHED"}
             >
-              Roll Dice (Select Move)
+              Attack
             </button>
 
             {debugManualControls ? (
@@ -526,8 +522,15 @@ const Battle = ({
       </div>
 
       <div className="battle__grid">
-        <BattleSide sideState={battleState.player} isPlayer={true} />
-        <BattleSide sideState={battleState.opponent} />
+        <BattleSide sideState={battleState.opponent} playerName={opponentName} />
+        <button
+          type="button"
+          onClick={handlePlayerRoll}
+          disabled={isResolvingTurnRef.current || battleState.status === "FINISHED"}
+        >
+          Attack
+        </button>
+        <BattleSide sideState={battleState.player} isPlayer={true} playerName={playerName} />
       </div>
 
       {Array.isArray(battleState.lastTurnMessages) && battleState.lastTurnMessages.length > 0 ? (

@@ -2,11 +2,27 @@
 import React, { useMemo } from "react";
 import "./PokemonImage.scss";
 
+const SPRITE_SLUG_OVERRIDES = Object.freeze({
+  // Your internal names -> PokemonDB sprite slugs
+  "nidoran(m)": "nidoran-m",
+  "nidoran(f)": "nidoran-f",
+
+  // Optional: if you ever store the gender symbols instead
+  "nidoran♂": "nidoran-m",
+  "nidoran♀": "nidoran-f",
+});
+
+const normalizeKey = (name) =>
+  typeof name === "string" ? name.trim().toLowerCase() : "";
+
 const toSpriteSlug = (name) => {
-  if (typeof name !== "string") return "";
-  return name
-    .trim()
-    .toLowerCase()
+  const key = normalizeKey(name);
+  if (!key) return "";
+
+  const override = SPRITE_SLUG_OVERRIDES[key];
+  if (override) return override;
+
+  return key
     .replace(/[.:'’]/g, "")
     .replace(/\s+/g, "-");
 };
