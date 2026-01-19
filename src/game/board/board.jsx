@@ -232,7 +232,7 @@ const Board = () => {
           style={{ width: layout.size, height: layout.size }}
         >
           {/* 1) Tiles layer */}
-          <div className="boardTilesLayer">
+          <div className={`boardTilesLayer ${isWrexoView ? 'wrexoView' : ''}`}>
             {tiles.map((t) => {
               const pos = layout.positions.get(t.id);
 

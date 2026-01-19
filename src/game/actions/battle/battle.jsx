@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import OrderSelect from "./components/orderSelect";
 import FirstDecision from "./components/firstDecision";
-import Player from "./components/player";
-import Opponent from "./components/opponent";
+import BattleSide from "./components/battleSide";
 import BattleResult from "./components/battleResult";
 
 import { createBattleState, getTurnLabel, prepareStartOfTurn, TURN } from "./battleEngine";
@@ -39,7 +38,7 @@ const pickPersistedFieldsFromBattlePokemon = (battlePokemon) => {
   };
 };
 
-const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [] }) => {
+const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [], isEliteBattle = false }) => {
   const { rollDice, evenDiceRoll, minMaxDiceRoll } = useDiceRoll();
   const { setGameState } = useGame();
 
@@ -48,7 +47,9 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [] }) => {
   const initialOpponentTeamRef = useRef(null);
 
   if (!initialPlayerTeamRef.current) {
-    initialPlayerTeamRef.current = Array.isArray(playerTeam) ? playerTeam.map((p) => ({ ...p })) : [];
+    initialPlayerTeamRef.current = Array.isArray(playerTeam)
+      ? playerTeam.map((p) => ({ ...p }))
+      : [];
   }
 
   if (!initialOpponentTeamRef.current) {
@@ -279,9 +280,15 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [] }) => {
         const prevStatus = pk?.status;
         const nextStatus = persisted.status;
 
-        const statusChanged = JSON.stringify(prevStatus || null) !== JSON.stringify(nextStatus || null);
+        const statusChanged =
+          JSON.stringify(prevStatus || null) !== JSON.stringify(nextStatus || null);
 
-        if (nextHealth !== prevHealth || nextMax !== prevMax || nextFainted !== prevFainted || statusChanged) {
+        if (
+          nextHealth !== prevHealth ||
+          nextMax !== prevMax ||
+          nextFainted !== prevFainted ||
+          statusChanged
+        ) {
           changed = true;
           return {
             ...pk,
@@ -348,6 +355,7 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [] }) => {
           winner={battleState.winner}
           playerId={playerId}
           playerTeam={battleState?.player?.team || []}
+          isEliteBattle={isEliteBattle}
         />
       ) : null}
 
@@ -421,8 +429,8 @@ const Battle = ({ playerId = null, playerTeam = [], opponentTeam = [] }) => {
       </div>
 
       <div className="battle__grid">
-        <Player playerState={battleState.player} />
-        <Opponent opponentState={battleState.opponent} />
+        <BattleSide title="Player" sideState={battleState.player} />
+        <BattleSide title="Opponent" sideState={battleState.opponent} />
       </div>
 
       {Array.isArray(battleState.lastTurnMessages) && battleState.lastTurnMessages.length > 0 ? (

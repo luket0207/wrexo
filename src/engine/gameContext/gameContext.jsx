@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import useItems from "./useItems";
 import useEvents from "./useEvent";
 
+import eliteTrainers from "../../game/actions/battle/eliteTrainers.jsx";
+
 const GameContext = createContext(null);
 
 const DEFAULT_PLAYERS_FALLBACK = Object.freeze([
@@ -83,16 +85,87 @@ const normalizePlayersToGamePlayers = (playersInput) => {
   }));
 };
 
-export const buildNewGameState = (playersInput) => ({
-  ...DEFAULT_GAME_STATE,
-  players: normalizePlayersToGamePlayers(playersInput),
-  turnIndex: 0,
-  isAnimating: false,
-  lastRoll: null,
-  pendingMove: null,
-  activeAction: null,
-  pendingItemDecision: null,
-});
+const shuffleInPlace = (arr) => {
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
+};
+
+const pickEliteTrainersUniqueTypes = (all, count = 4) => {
+  const pool = Array.isArray(all) ? all.slice() : [];
+  shuffleInPlace(pool);
+
+  const picked = [];
+  const usedTypes = new Set();
+
+  for (let i = 0; i < pool.length && picked.length < count; i += 1) {
+    const t = pool[i];
+    const type = String(t?.type || "").trim();
+    if (!type) continue;
+    if (usedTypes.has(type)) continue;
+
+    usedTypes.add(type);
+    picked.push(t);
+  }
+
+  if (picked.length < count) {
+    throw new Error(`Not enough unique elite trainer types to pick ${count}.`);
+  }
+
+  return picked;
+};
+
+const assignEliteTrainersToWrexoTiles = (picked) => {
+  // EliteBattle tiles in your SEQ: indices 0, 9, 18, 27 => MW01, MW10, MW19, MW28
+  const ELITE_TILE_IDS = ["MW01", "MW10", "MW19", "MW28"];
+
+  const byTileId = {};
+  for (let i = 0; i < ELITE_TILE_IDS.length; i += 1) {
+    const tileId = ELITE_TILE_IDS[i];
+    const trainer = picked[i];
+
+    // Store only what you need for now (and later you can add pools/levels)
+    byTileId[tileId] = {
+      name: trainer.name,
+      type: trainer.type,
+      gender: trainer.gender,
+    };
+  }
+
+  return byTileId;
+};
+
+export const buildNewGameState = (playersInput) => {
+  // 1) Pick 4 elite trainers, unique by type (stable for the entire game)
+  const selectedElite = pickEliteTrainersUniqueTypes(eliteTrainers, 4);
+
+  // 2) Assign them to the 4 EliteBattle tiles (stable for the entire game)
+  const eliteTrainerByTileId = assignEliteTrainersToWrexoTiles(selectedElite);
+
+  return {
+    ...DEFAULT_GAME_STATE,
+    players: normalizePlayersToGamePlayers(playersInput),
+
+    turnIndex: 0,
+    isAnimating: false,
+    lastRoll: null,
+    pendingMove: null,
+    activeAction: null,
+    pendingItemDecision: null,
+
+    // NEW: per-game elite trainer selection + placement
+    eliteTrainersSelected: selectedElite.map((t) => ({
+      name: t.name,
+      type: t.type,
+      gender: t.gender,
+    })),
+    eliteTrainerByTileId,
+  };
+};
 
 export const GameProvider = ({ children, initialState = null }) => {
   const [gameState, setGameState] = useState(() => {

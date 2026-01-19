@@ -18,7 +18,7 @@ const hasAnyAlivePokemon = (team) => {
   return false;
 };
 
-const BattleResult = ({ winner, playerId = null, playerTeam = [] }) => {
+const BattleResult = ({ winner, playerId = null, playerTeam = [], isEliteBattle = false }) => {
   const { endActiveAction } = useActions();
   const { setGameState, setPlayerFainted } = useGame();
 
@@ -29,45 +29,124 @@ const BattleResult = ({ winner, playerId = null, playerTeam = [] }) => {
   }, [winner, playerTeam]);
 
   const bannerText = useMemo(() => {
+    if (isEliteBattle && winner === TURN.PLAYER) return "Elite Battle Won!";
     if (playerWiped) return "Player has run out of Pokemon. Player fainted.";
     return `Battle Over! Winner: ${getWinnerLabel(winner)}`;
-  }, [winner, playerWiped]);
+  }, [winner, playerWiped, isEliteBattle]);
+
+  const clearPartyStatuses = (prev, pid) => {
+    const players = Array.isArray(prev?.players) ? prev.players : [];
+    const pIndex = players.findIndex((pl) => pl?.id === pid);
+    if (pIndex === -1) return prev;
+
+    const playerObj = players[pIndex];
+    const party = Array.isArray(playerObj?.pokemon) ? playerObj.pokemon : [];
+    if (party.length === 0) return prev;
+
+    const nextParty = party.map((pk) => {
+      if (!pk || !pk.status) return pk;
+      return {
+        ...pk,
+        status: {
+          burn: 0,
+          poison: 0,
+          sleep: 0,
+          paralyse: 0,
+          confusePending: 0,
+          confuseSlots: [],
+          burnJustApplied: false,
+          poisonJustApplied: false,
+        },
+      };
+    });
+
+    const nextPlayers = players.slice();
+    nextPlayers[pIndex] = { ...playerObj, pokemon: nextParty };
+    return { ...prev, players: nextPlayers };
+  };
 
   const onReturn = () => {
-    // IMPORTANT: Do not end the active action until the user explicitly clicks.
-    if (playerWiped && playerId) {
-      setPlayerFainted(playerId, true);
-    }
+    // ----------------------------
+    // ELITE BATTLE WIN: special flow
+    // ----------------------------
+    if (isEliteBattle && winner === TURN.PLAYER && playerId) {
+      let reachedWinCondition = false;
 
-    // Clear status effects from all player Pokémon when battle ends
-    if (playerId && Array.isArray(playerTeam)) {
       setGameState((prev) => {
         const players = Array.isArray(prev?.players) ? prev.players : [];
         const pIndex = players.findIndex((pl) => pl?.id === playerId);
         if (pIndex === -1) return prev;
 
         const playerObj = players[pIndex];
-        const party = Array.isArray(playerObj?.pokemon) ? playerObj.pokemon : [];
-        if (party.length === 0) return prev;
+        const prevLevel = Number(playerObj?.level) || 1;
+        const nextLevel = prevLevel + 1;
 
-        const nextParty = party.map((pk) => {
-          if (!pk || !pk.status) return pk;
+        // Winner hits level 5 => game ends
+        if (nextLevel >= 5) {
+          reachedWinCondition = true;
+
+          const nextPlayers = players.slice();
+          nextPlayers[pIndex] = { ...playerObj, level: nextLevel };
+
+          // Also clear party statuses for cleanliness (optional but safe)
+          const withStatusCleared = clearPartyStatuses({ ...prev, players: nextPlayers }, playerId);
+
           return {
-            ...pk,
-            status: {
-              burn: 0,
-              poison: 0,
-              sleep: 0,
-              paralyse: 0,
-              confuse: 0,
+            ...withStatusCleared,
+            activeAction: {
+              kind: "end",
+              winnerPlayerId: playerId,
             },
+            pendingMove: null,
+            isAnimating: false,
           };
-        });
+        }
+
+        // Otherwise: player "faints" and loses whole team, exits mount, must re-pick start
+        const nextPlayer = {
+          ...playerObj,
+          level: nextLevel,
+
+          pokemon: [],
+
+          climbingMountWrexo: false,
+
+          // Force the start-selection modal flow again on their next turn
+          isFainted: true,
+          hasChosenStart: false,
+          isChoosingStart: true,
+        };
 
         const nextPlayers = players.slice();
-        nextPlayers[pIndex] = { ...playerObj, pokemon: nextParty };
-        return { ...prev, players: nextPlayers };
+        nextPlayers[pIndex] = nextPlayer;
+
+        // Clear status across party (party is now empty, but keep it consistent)
+        const withStatusCleared = clearPartyStatuses({ ...prev, players: nextPlayers }, playerId);
+
+        return {
+          ...withStatusCleared,
+        };
       });
+
+      // CRITICAL: if we triggered the end screen, DO NOT clear activeAction.
+      // Clearing it would immediately remove the "end" action before it renders.
+      if (reachedWinCondition) return;
+
+      // End action and return to board (the player will be in "fainted / choose start" flow next turn)
+      endActiveAction();
+      return;
+    }
+
+    // ----------------------------
+    // NORMAL BATTLE FLOW (existing)
+    // ----------------------------
+    if (playerWiped && playerId) {
+      setPlayerFainted(playerId, true);
+    }
+
+    // Clear status effects from all player Pokémon when battle ends
+    if (playerId && Array.isArray(playerTeam)) {
+      setGameState((prev) => clearPartyStatuses(prev, playerId));
     }
 
     endActiveAction();

@@ -25,6 +25,11 @@
 .boardTilesLayer {
   position: relative;
   z-index: 1;
+
+  &.wrexoView {
+    left: 30px;
+    top: -12px;
+  }
 }
 
 .boardPiecesLayer {

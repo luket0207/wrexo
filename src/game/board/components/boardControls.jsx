@@ -13,7 +13,7 @@ const TILE_KEY = Object.freeze([
 const TILE_KEY_WREXO = Object.freeze([
   { label: "Elite Battle", color: "#F6C343" }, // vibrant gold
   { label: "Poke Mart", color: "#2B4FA3" }, // same as board
-  { label: "Feature", color: "#f5d7a0" }, // same as board
+  { label: "Castle", color: "#f5d7a0" }, // same as board
   { label: "NPC", color: "#4FA3C7" }, // same as board
   { label: "Trainer", color: "#bd7440" }, // same as board
   { label: "Path", color: "#2F3A44" }, // dark slate grey

@@ -43,19 +43,30 @@ const SEQ = Object.freeze([
   { wrexoKind: "Path", name: "Path" },
 ]);
 
-export const MOUNT_WREXO_TILES = Object.freeze(
-  SEQ.map((t, i) => {
-    const n = i + 1;
-    return {
-      index: i,
-      id: `MW${pad2(n)}`, // MW01..MW36
-      tileNumber: n,
-      zone: { code: "MW", name: "Mount Wrexo" },
-      type: t.wrexoKind,
-      wrexoKind: t.wrexoKind,
-      name: t.name,
-    };
-  })
-);
+export const buildMountWrexoTiles = (eliteTrainerByTileId = {}) =>
+  Object.freeze(
+    SEQ.map((t, i) => {
+      const n = i + 1;
+      const id = `MW${pad2(n)}`;
 
+      const assignedElite = t.wrexoKind === "EliteBattle" ? eliteTrainerByTileId[id] : null;
+
+      return {
+        index: i,
+        id, // MW01..MW36
+        tileNumber: n,
+        zone: { code: "MW", name: "Mount Wrexo" },
+        type: t.wrexoKind,
+        wrexoKind: t.wrexoKind,
+
+        // Display name: if EliteBattle and assigned, show trainer name
+        name: assignedElite?.name ? assignedElite.name : t.name,
+
+        // Keep the assignment available for later battle triggers
+        eliteTrainer: assignedElite || null,
+      };
+    })
+  );
+
+export const MOUNT_WREXO_TILES = buildMountWrexoTiles();
 export default MOUNT_WREXO_TILES;

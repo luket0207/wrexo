@@ -11,7 +11,7 @@ import { buildTiles, movePlayerBySteps } from "../boardMovement";
 import Button, { BUTTON_VARIANT } from "../../../engine/ui/button/button";
 import { MODAL_BUTTONS, useModal } from "../../../engine/ui/modal/modalContext";
 
-import MOUNT_WREXO_TILES from "../../../assets/gameContent/tilesMountWrexo.jsx";
+import { buildMountWrexoTiles } from "../../../assets/gameContent/tilesMountWrexo.jsx";
 
 const computeNextTurnIndex = (prevTurnIndex, playerCount) => {
   const count = Math.max(1, Number(playerCount) || 1);
@@ -59,9 +59,9 @@ export const useBoardLogic = () => {
 
   const mainTiles = useMemo(() => buildTiles(72), []);
   const wrexoTiles = useMemo(() => {
-    // Ensure indices are correct; file already sets 0..35.
-    return Array.isArray(MOUNT_WREXO_TILES) ? MOUNT_WREXO_TILES : buildTiles(36);
-  }, []);
+    const byTileId = gameState?.eliteTrainerByTileId || {};
+    return buildMountWrexoTiles(byTileId);
+  }, [gameState?.eliteTrainerByTileId]);
 
   const players = useMemo(
     () => (Array.isArray(gameState?.players) ? gameState.players : []),
@@ -410,9 +410,24 @@ export const useBoardLogic = () => {
           }));
         };
 
-        // Elite Battle: event 100%
+        // Elite Battle: ALWAYS start a battle action (BattleContainer)
         if (tileType === "EliteBattle") {
-          forceEvent();
+          setGameState((prev) => ({
+            ...prev,
+            activeAction: {
+              kind: "battle", // must match ACTIONS.battle -> BattleContainer
+              playerId,
+              tileId: landedTileId,
+              tileType, // "EliteBattle"
+              afterTurnIndex: computeNextTurnIndex(prev.turnIndex, (prev.players || []).length),
+              zoneId: "MW",
+              locationType: "elite",
+              actionKey,
+              eliteTrainerName: prev?.eliteTrainerByTileId?.[landedTileId]?.name || null,
+            },
+            pendingMove: null,
+            isAnimating: false,
+          }));
           return;
         }
 
@@ -700,6 +715,17 @@ export const useBoardLogic = () => {
 
       const tileType = String(landedTile?.type || "");
 
+      // Mount Wrexo: ALL tile types are handled by startTileAction (EliteBattle, Path, etc.)
+      if (isWrexoView) {
+        startTileAction({
+          playerId,
+          landedTileId: finalTileId || landedTile.id,
+          landedTile,
+        });
+        return;
+      }
+
+      // Main board: only some tile types trigger actions
       if (
         tileType === "Grass" ||
         tileType === "Feature" ||
@@ -738,6 +764,7 @@ export const useBoardLogic = () => {
       startTileAction,
       triggerEventsForLanding,
       endTurn,
+      isWrexoView,
     ]
   );
 

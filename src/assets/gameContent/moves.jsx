@@ -26,21 +26,21 @@ const moves = [
     statusEffects: [{ effect: "Burn", strength: 2 }],
   },
   {
-    name: "Fire Blast",
-    rarity: "Rare",
-    type: "Fire",
-    damage: 20,
-    statusEffects: [
-      { effect: "Burn", strength: 2 },
-      { effect: "RASELF", strength: 1 },
-    ],
-  },
-  {
     name: "Fire Punch",
     rarity: "Rare",
     type: "Fire",
     damage: 30,
     statusEffects: [],
+  },
+  {
+    name: "Fire Blast",
+    rarity: "Rare",
+    type: "Fire",
+    damage: 30,
+    statusEffects: [
+      { effect: "Burn", strength: 2 },
+      { effect: "RASELF", strength: 1 },
+    ],
   },
 
   // Fire — Epic
@@ -61,18 +61,18 @@ const moves = [
 
   // Fire — Legendary
   {
-    name: "Crimson Storm",
-    rarity: "Legendary",
-    type: "Fire",
-    damage: 60,
-    statusEffects: [{ effect: "RASELF", strength: 2 }],
-  },
-  {
     name: "Heat Wave",
     rarity: "Legendary",
     type: "Fire",
     damage: 45,
     statusEffects: [{ effect: "Burn", strength: 3 }],
+  },
+  {
+    name: "Crimson Storm",
+    rarity: "Legendary",
+    type: "Fire",
+    damage: 60,
+    statusEffects: [{ effect: "RASELF", strength: 2 }],
   },
 
   // ======================
@@ -152,8 +152,22 @@ const moves = [
     damage: 25,
     statusEffects: [{ effect: "Confuse", strength: 3 }],
   },
+  {
+    name: "Waterfall",
+    rarity: "Epic",
+    type: "Water",
+    damage: 30,
+    statusEffects: [{ effect: "RAE", strength: 2 }],
+  },
 
   // Water — Legendary
+  {
+    name: "Whirlpool",
+    rarity: "Legendary",
+    type: "Water",
+    damage: 50,
+    statusEffects: [{ effect: "Confuse", strength: 2 }],
+  },
   {
     name: "Hydro Pump",
     rarity: "Legendary",
@@ -162,23 +176,19 @@ const moves = [
     statusEffects: [],
   },
   {
-    name: "Whirlpool",
+    name: "Blizzard",
     rarity: "Legendary",
     type: "Water",
-    damage: 50,
-    statusEffects: [{ effect: "Confuse", strength: 2 }],
+    damage: 30,
+    statusEffects: [
+      { effect: "Paralyse", strength: 2 },
+      { effect: "RAE", strength: 3 },
+    ],
   },
 
   // ======================
   // Grass — Common
   // ======================
-  {
-    name: "Vine Whip",
-    rarity: "Common",
-    type: "Grass",
-    damage: 10,
-    statusEffects: [],
-  },
   {
     name: "Poison Powder",
     rarity: "Common",
@@ -192,6 +202,13 @@ const moves = [
     type: "Grass",
     damage: 0,
     statusEffects: [{ effect: "Poison", strength: 2 }],
+  },
+  {
+    name: "Smog",
+    rarity: "Common",
+    type: "Grass",
+    damage: 5,
+    statusEffects: [{ effect: "Poison", strength: 1 }],
   },
   {
     name: "String Shot",
@@ -215,6 +232,13 @@ const moves = [
     statusEffects: [{ effect: "Poison", strength: 1 }],
   },
   {
+    name: "Vine Whip",
+    rarity: "Common",
+    type: "Grass",
+    damage: 10,
+    statusEffects: [],
+  },
+  {
     name: "Leech Life",
     rarity: "Common",
     type: "Grass",
@@ -231,18 +255,18 @@ const moves = [
 
   // Grass — Rare
   {
-    name: "Razor Leaf",
-    rarity: "Rare",
-    type: "Grass",
-    damage: 30,
-    statusEffects: [],
-  },
-  {
     name: "Mega Drain",
     rarity: "Rare",
     type: "Grass",
     damage: 10,
     statusEffects: [{ effect: "Heal", strength: 1 }],
+  },
+  {
+    name: "Razor Leaf",
+    rarity: "Rare",
+    type: "Grass",
+    damage: 30,
+    statusEffects: [],
   },
   {
     name: "Sleep Powder",
@@ -257,6 +281,16 @@ const moves = [
     type: "Grass",
     damage: 20,
     statusEffects: [{ effect: "Poison", strength: 2 }],
+  },
+  {
+    name: "Pin Missile",
+    rarity: "Rare",
+    type: "Grass",
+    damage: 10,
+    statusEffects: [
+      { effect: "Paralyse", strength: 1 },
+      { effect: "RAE", strength: 1.5 },
+    ],
   },
 
   // Grass — Epic
@@ -367,8 +401,11 @@ const moves = [
     name: "Zap Cannon",
     rarity: "Legendary",
     type: "Lightning",
-    damage: 30,
-    statusEffects: [{ effect: "Paralyse", strength: 3 }],
+    damage: 35,
+    statusEffects: [
+      { effect: "Paralyse", strength: 2 },
+      { effect: "RAE", strength: 2 },
+    ],
   },
   {
     name: "Thunder",
@@ -513,7 +550,7 @@ const moves = [
     rarity: "Legendary",
     type: "Fighting",
     damage: 50,
-    statusEffects: [],
+    statusEffects: [{ effect: "RAM", strength: 1 }],
   },
 
   // ======================
@@ -521,6 +558,13 @@ const moves = [
   // ======================
   {
     name: "Confusion",
+    rarity: "Common",
+    type: "Psychic",
+    damage: 0,
+    statusEffects: [{ effect: "Confuse", strength: 2 }],
+  },
+  {
+    name: "Light Screen",
     rarity: "Common",
     type: "Psychic",
     damage: 0,
@@ -583,8 +627,8 @@ const moves = [
     name: "Psycho Cut",
     rarity: "Epic",
     type: "Psychic",
-    damage: 40,
-    statusEffects: [],
+    damage: 30,
+    statusEffects: [{ effect: "RAE", strength: 2 }],
   },
 
   // Psychic — Legendary
@@ -635,6 +679,13 @@ const moves = [
     statusEffects: [{ effect: "Paralyse", strength: 1 }],
   },
   {
+    name: "Gust",
+    rarity: "Common",
+    type: "Colourless",
+    damage: 10,
+    statusEffects: [],
+  },
+  {
     name: "Peck",
     rarity: "Common",
     type: "Colourless",
@@ -647,6 +698,20 @@ const moves = [
     type: "Colourless",
     damage: 5,
     statusEffects: [{ effect: "Paralyse", strength: 1 }],
+  },
+  {
+    name: "Scratch",
+    rarity: "Common",
+    type: "Colourless",
+    damage: 5,
+    statusEffects: [],
+  },
+  {
+    name: "Tackle",
+    rarity: "Common",
+    type: "Colourless",
+    damage: 10,
+    statusEffects: [],
   },
   {
     name: "Payday",
@@ -670,25 +735,18 @@ const moves = [
     statusEffects: [],
   },
   {
-    name: "Scratch",
+    name: "Swords Dance",
     rarity: "Common",
     type: "Colourless",
-    damage: 5,
-    statusEffects: [],
+    damage: 0,
+    statusEffects: [{ effect: "RAE", strength: 2.5 }],
   },
   {
-    name: "Tackle",
+    name: "Lovely Kiss",
     rarity: "Common",
     type: "Colourless",
-    damage: 10,
-    statusEffects: [],
-  },
-  {
-    name: "Gust",
-    rarity: "Common",
-    type: "Colourless",
-    damage: 10,
-    statusEffects: [],
+    damage: 0,
+    statusEffects: [{ effect: "Sleep", strength: 1 }],
   },
 
   // Colourless — Rare
@@ -724,7 +782,7 @@ const moves = [
     name: "Quick Attack",
     rarity: "Rare",
     type: "Colourless",
-    damage: 20,
+    damage: 25,
     statusEffects: [{ effect: "RAE", strength: 1 }],
   },
   {
@@ -746,7 +804,7 @@ const moves = [
     rarity: "Rare",
     type: "Colourless",
     damage: 35,
-    statusEffects: [],
+    statusEffects: [{ effect: "RASELF", strength: 1 }],
   },
   {
     name: "Strength",
@@ -805,11 +863,55 @@ const moves = [
     statusEffects: [{ effect: "RASELF", strength: 2 }],
   },
   {
+    name: "Dizzy Punch",
+    rarity: "Rare",
+    type: "Colourless",
+    damage: 25,
+    statusEffects: [{ effect: "Confuse", strength: 2 }],
+  },
+  {
+    name: "Dragon Rage",
+    rarity: "Rare",
+    type: "Colourless",
+    damage: 30,
+    statusEffects: [],
+  },
+  {
+    name: "Transform",
+    rarity: "Rare",
+    type: "Colourless",
+    damage: 0,
+    statusEffects: [
+      {
+        effect: "Transform",
+        strength: 0,
+        text: "Replace your moves with your opponents for the rest of this battle.",
+      },
+    ],
+  },
+  {
     name: "Sing",
     rarity: "Rare",
     type: "Colourless",
     damage: 0,
     statusEffects: [{ effect: "Sleep", strength: 2 }],
+  },
+  {
+    name: "Soft-Boiled",
+    rarity: "Rare",
+    type: "Colourless",
+    damage: 0,
+    statusEffects: [{ effect: "Heal", strength: 2 }],
+  },
+  {
+    name: "Rest",
+    rarity: "Rare",
+    type: "Colourless",
+    damage: 0,
+    statusEffects: [
+      { effect: "Heal", strength: 3 },
+      { effect: "SleepSELF", strength: 1 },
+    ],
   },
 
   // Colourless — Epic
@@ -824,8 +926,11 @@ const moves = [
     name: "Skull Bash",
     rarity: "Epic",
     type: "Colourless",
-    damage: 35,
-    statusEffects: [{ effect: "Confuse", strength: 2 }],
+    damage: 50,
+    statusEffects: [
+      { effect: "Confuse", strength: 2 },
+      { effect: "SELF", strength: 1 },
+    ],
   },
   {
     name: "Mega Punch",
@@ -870,21 +975,18 @@ const moves = [
     statusEffects: [{ effect: "Paralyse", strength: 1 }],
   },
   {
+    name: "Guillotine",
+    rarity: "Epic",
+    type: "Colourless",
+    damage: 0,
+    statusEffects: [{ effect: "RAM", strength: 6 }],
+  },
+  {
     name: "Recover",
     rarity: "Epic",
     type: "Colourless",
     damage: 0,
     statusEffects: [{ effect: "Heal", strength: 3 }],
-  },
-  {
-    name: "Rest",
-    rarity: "Epic",
-    type: "Colourless",
-    damage: 0,
-    statusEffects: [
-      { effect: "Heal", strength: 3 },
-      { effect: "SleepSELF", strength: 1 },
-    ],
   },
 
   // Colourless — Legendary
